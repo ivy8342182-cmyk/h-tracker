@@ -225,8 +225,9 @@ select:focus,input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 
 .flist-date { width:80px; flex-shrink:0; font-size:11px; font-weight:500; color:var(--text-muted); white-space:nowrap; }
 .flist-date.flist-overdue { color:#b84040; }
 .flist-status { width:72px; flex-shrink:0; }
-.folder-drop-zone { border: 2px dashed var(--border); border-radius: var(--radius-sm); padding: 1rem; text-align: center; font-size: 12px; color: var(--text-hint); margin: 0 0 4px 1.25rem; cursor: pointer; transition: all .15s; }
-.folder-drop-zone:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+.folder-header.drag-over { border: 2px dashed var(--accent) !important; background: var(--accent-light) !important; }
+.k-card.dragging { opacity: .4; transform: scale(.97); }
+.folder-drop-zone { display: none; } /* hide old drop zones */
 .folder-collapsed .folder-grid,.folder-collapsed .folder-drop-zone { display: none; }
 /* Uncategorised section */
 .uncat-label { font-size: 10px; font-weight: 600; color: var(--text-hint); text-transform: uppercase; letter-spacing: .08em; padding: 4px 0 8px; }
@@ -305,6 +306,10 @@ select:focus,input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 
 .mt-block-desc { font-size: 11px; color: var(--text-hint); }
 .mt-block-count { font-size: 11px; font-weight: 600; background: var(--bg); border: 1px solid var(--border); border-radius: 20px; padding: 1px 8px; color: var(--text-muted); }
 .mt-row { display: flex; align-items: center; gap: 10px; padding: 9px 1.125rem; border-bottom: 1px solid var(--border); transition: background .1s; }
+.mt-row-cb { display:none; width:16px; height:16px; flex-shrink:0; accent-color:var(--accent); cursor:pointer; }
+.mt-select-mode .mt-row-cb { display:block; }
+.mt-select-mode .mt-row { cursor:pointer; }
+.mt-row.mt-selected { background:rgba(26,143,104,.08) !important; border-left:3px solid var(--accent); }
 .mt-row:last-child { border-bottom: none; }
 .mt-row:hover { background: var(--surface-2); }
 .mt-row-left { flex: 1; min-width: 0; display: flex; align-items: center; gap: 9px; }
@@ -483,9 +488,19 @@ textarea.fc{resize:vertical;min-height:68px;}
 .toast.show{opacity:1;transform:translateY(0);}
 
 @media(max-width:700px){
-  .sidebar{display:none;}
+  .sidebar{display:none;position:fixed;top:0;left:0;height:100vh;z-index:200;box-shadow:var(--shadow-lg);}
+  .sidebar.mobile-open{display:flex;}
+  .mobile-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:199;}
+  .mobile-overlay.show{display:block;}
+  .hamburger{display:flex;align-items:center;justify-content:center;width:32px;height:32px;border:none;background:rgba(255,255,255,.1);border-radius:var(--radius-xs);cursor:pointer;flex-shrink:0;color:rgba(255,255,255,.7);font-size:16px;}
   .stats{grid-template-columns:repeat(2,1fr);}
   .c-header,.toolbar,.list-wrap,.kanban{padding-left:1rem;padding-right:1rem;}
+  .cal-panel{display:none;}
+  .cal-panel.mobile-show{display:flex;position:fixed;inset:0;z-index:150;border-radius:0;}
+}
+@media(min-width:701px){
+  .hamburger{display:none;}
+  .mobile-overlay{display:none!important;}
 }
 </style>
 </head>
@@ -493,6 +508,7 @@ textarea.fc{resize:vertical;min-height:68px;}
 
 <header class="header">
   <div class="brand">
+    <button class="hamburger" onclick="toggleMobileNav()" aria-label="選單">☰</button>
     <div>
       <div class="brand-name">黃琮福建築師事務所 工作進度追蹤管理</div>
       <div class="brand-sub">HUANG TSUNG-FU ARCHITECTS — Task Tracking System</div>
@@ -514,8 +530,9 @@ textarea.fc{resize:vertical;min-height:68px;}
   </div>
 </header>
 
+<div class="mobile-overlay" id="mobile-overlay" onclick="toggleMobileNav()"></div>
 <div class="app">
-  <nav class="sidebar">
+  <nav class="sidebar" id="sidebar">
     <div class="sb-label">視圖</div>
     <button class="sb-btn active" onclick="switchNav('project',this)"><span class="sb-icon">⊞</span>專案總覽</button>
     <button class="sb-btn" onclick="switchNav('mytasks',this)"><span class="sb-icon">☑</span>工作進度</button>
@@ -549,6 +566,14 @@ textarea.fc{resize:vertical;min-height:68px;}
             <option>進行中</option><option>審核中</option><option>完成</option><option>待辦</option>
           </select>
           <select id="fpr" onchange="renderProject()"><option value="">所有專案</option></select>
+          <select id="fsort" onchange="renderProject()">
+            <option value="default">預設排序</option>
+            <option value="name">專案名稱 A→Z</option>
+            <option value="pct_asc">完成度 低→高</option>
+            <option value="pct_desc">完成度 高→低</option>
+            <option value="due_asc">截止日期 近→遠</option>
+            <option value="status">狀態</option>
+          </select>
         </div>
       </div>
       <div class="stats">
@@ -598,6 +623,8 @@ textarea.fc{resize:vertical;min-height:68px;}
     <div id="view-mytasks" style="display:none">
       <div class="c-header">
         <div class="c-title" id="mt-title">工作進度</div>
+      </div>
+      <div style="padding:0 2rem .5rem">
         <div class="c-tabs"><button class="ctab active">清單</button></div>
       </div>
       <div class="mt-person-bar" id="mt-person-bar">
@@ -687,6 +714,7 @@ textarea.fc{resize:vertical;min-height:68px;}
         </div>
         <div class="pd-actions">
           <span class="badge" id="pd-badge" style="font-size:12px;padding:3px 10px"></span>
+          <button class="btn" id="pd-edit-meta-btn" onclick="openEditProjectMeta()">✏️ 編輯專案資料</button>
           <button class="btn btn-danger" id="pd-delete-btn" onclick="deleteProject()">刪除專案</button>
           <button class="btn btn-primary" id="pd-add-btn">＋ 新增任務</button>
         </div>
@@ -782,6 +810,23 @@ textarea.fc{resize:vertical;min-height:68px;}
       <div class="mfooter-r">
         <button class="btn" onclick="closeModal()">取消</button>
         <button class="btn btn-primary" onclick="saveTask()">儲存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Project Meta Edit Modal -->
+<div class="overlay" id="proj-meta-overlay" onclick="if(event.target===this)closeEditProjectMeta()">
+  <div class="modal">
+    <div class="modal-title">編輯專案資料</div>
+    <div class="fg"><label class="flabel">專案名稱 <span style="color:#b84040">*</span></label><input class="fc" type="text" id="pm-name" placeholder="專案名稱"></div>
+    <div class="fg"><label class="flabel">業主名稱</label><input class="fc" type="text" id="pm-client" placeholder="業主名稱"></div>
+    <div class="fg"><label class="flabel">案件基地座落位址</label><input class="fc" type="text" id="pm-addr" placeholder="基地地址"></div>
+    <div class="mfooter">
+      <div></div>
+      <div class="mfooter-r">
+        <button class="btn" onclick="closeEditProjectMeta()">取消</button>
+        <button class="btn btn-primary" onclick="saveProjectMeta()">儲存</button>
       </div>
     </div>
   </div>
@@ -1027,17 +1072,22 @@ function renderKanban(pjs,grps){
   if(!allPjs.size){grid.innerHTML='<div class="empty"><p style="font-size:32px">📋</p><p>目前沒有工作項目，點右上角新增吧！</p></div>';return;}
 
   function kCard(pn){
-    const ts=grps[pn]||[];  // show even if no tasks
+    const ts=grps[pn]||[];
     const asgns=[...new Set(ts.map(t=>t.assignee).filter(Boolean))];
     const avg=ts.length?Math.round(ts.reduce((a,t)=>a+(t.pct||0),0)/ts.length):0;
     const nd=ts.filter(t=>t.date).sort((a,b)=>new Date(a.date)-new Date(b.date))[0];
     const sid='ap_'+pn.replace(/[^\w]/g,'_').slice(0,20);
-    // folder badge for this project
     const pFolder=folders.find(f=>f.projects&&f.projects.includes(pn));
-    return`<div class="k-card" onclick="openPDetail('${pn}')" style="cursor:pointer">
+    // Derive project status from actual task statuses
+    const allDone=ts.length>0&&ts.every(t=>t.status==='完成');
+    const projStatus=allDone?'完成':
+      ts.some(t=>t.status==='進行中')?'進行中':
+      ts.some(t=>t.status==='審核中')?'審核中':
+      ts.length>0?'待辦':'待辦';
+    return`<div class="k-card" draggable="true" ondragstart="dragProject('${pn}',event)" ondragend="dragProjectEnd(event)" onclick="openPDetail('${pn}')" style="cursor:pointer">
       <div class="k-header">
         <div class="k-name">${pn}</div>
-        <span class="badge ${sc(cs(avg))}">${cs(avg)}</span>
+        <span class="badge ${sc(projStatus)}">${projStatus}</span>
       </div>
       <div class="k-tasks">${ts.map(t=>`<div class="k-row" onclick="event.stopPropagation();openModal('${t.id}')"><div class="k-desc" title="${t.task||''}">${t.task||'（未命名）'}</div><div class="k-bar-wrap"><div class="k-bar-fill" style="width:${t.pct||0}%"></div></div><div class="k-pct">${t.pct||0}%</div></div>`).join('')}</div>
       <div class="k-footer" onclick="event.stopPropagation()">
@@ -1071,18 +1121,22 @@ function renderKanban(pjs,grps){
 
   // Build sections: folders first, then uncategorised
   const allFolderProjectsSet=new Set(folders.flatMap(f=>f.projects||[]));
-  const uncatProjs=[...allPjs].filter(pn=>!allFolderProjectsSet.has(pn));
+  const uncatProjs=sortProjects([...allPjs].filter(pn=>!allFolderProjectsSet.has(pn)), grps);
 
   let html='<div class="kanban-section">';
 
   // Render each folder
   folders.forEach((f,fi)=>{
-    const fProjs=(f.projects||[]);  // show ALL projects in folder, with or without tasks
+    const fProjs=sortProjects(f.projects||[], grps);  // show ALL, sorted
     const fProjsWithTasks=fProjs.filter(pn=>grps[pn]); // for stats only
     const isOpen=!collapsed['folder_'+f.id];
     const fView=folderViews[f.id]||'kanban'; // 'kanban' or 'list'
     html+=`<div class="folder-block">
-      <div class="folder-header" data-fid="${f.id}" onclick="toggleFolderCollapse('${f.id}',this)">
+      <div class="folder-header" data-fid="${f.id}"
+        onclick="toggleFolderCollapse('${f.id}',this)"
+        ondragover="folderDragOver(event,'${f.id}')"
+        ondragleave="folderDragLeave(event)"
+        ondrop="dropToFolder(event,'${f.id}')">
         <span class="folder-icon">${isOpen?'📂':'📁'}</span>
         <span class="folder-color" style="background:${f.color||'#888'}"></span>
         <input class="folder-name-input" value="${f.name.replace(/"/g,'&quot;')}" data-fid="${f.id}" data-orig="${f.name.replace(/"/g,'&quot;')}" onclick="event.stopPropagation()">
@@ -1103,7 +1157,6 @@ function renderKanban(pjs,grps){
         fProjs.forEach(pn=>{ html+=kCard(pn); });
         html+=`</div>`;
       } else {
-        // List view for folder — compact rows, no table
         html+=`<div class="folder-list-wrap">
           <div class="flist" style="margin-left:1.25rem;border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;background:var(--surface);width:calc(100% - 1.25rem)">
             <div class="flist-head">
@@ -1142,20 +1195,18 @@ function renderKanban(pjs,grps){
               </div>`;
             }).join('')}
           </div>
-          <div class="folder-drop-zone" style="margin-left:1.25rem" onclick="openAddProjectToFolder('${f.id}')">＋ 將現有專案加入此資料夾</div>
         </div>`;
-      }
-      if(fView==='kanban'){
-        html+=`<div class="folder-drop-zone" onclick="openAddProjectToFolder('${f.id}')">＋ 將現有專案加入此資料夾</div>`;
       }
     }
     html+=`</div>`;
   });
 
-  // Uncategorised
-  if(uncatProjs.length){
-    if(folders.length) html+=`<div class="uncat-label">未分類專案</div>`;
-    html+=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:12px">`;
+  if(uncatProjs.length||folders.length){
+    if(folders.length){
+      html+=`<div class="uncat-label" ondragover="event.preventDefault()" ondrop="dropToUncat(event)" style="padding:6px 8px;border-radius:var(--radius-xs);transition:background .15s" id="uncat-zone">未分類專案</div>`;
+    }
+    html+=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:12px"
+      ondragover="event.preventDefault()" ondrop="dropToUncat(event)">`;
     uncatProjs.forEach(pn=>{ html+=kCard(pn); });
     html+=`</div>`;
   }
@@ -1295,8 +1346,9 @@ window.renderMyTasks=function(){
     const projOpts=pjs.map(p=>`<div class="iproj-opt${t.project===p?' cur':''}" data-proj="${p}" data-id="${t.id}">${t.project===p?'✓ ':''} ${p}</div>`).join('');
     const dateStr=t.date?t.date.slice(5).replace('-','/'):'—';
     const isOv=ov(t.date)&&t.pct<100;
-    return`<div class="mt-row" data-id="${t.id}">
-      <div class="chk ${t.pct===100?'done':''}" data-id="${t.id}" data-pct="${t.pct||0}" onclick="quickToggle('${t.id}',${t.pct||0})"></div>
+    return`<div class="mt-row" data-id="${t.id}" onclick="mtRowClick(event,'${t.id}')">
+      <input type="checkbox" class="mt-row-cb" data-id="${t.id}" onclick="event.stopPropagation()" onchange="mtCbChange(this)">
+      <div class="chk ${t.pct===100?'done':''}" data-id="${t.id}" data-pct="${t.pct||0}" onclick="event.stopPropagation();quickToggle('${t.id}',${t.pct||0})"></div>
       <div class="mt-row-left">
         <div class="iproj-wrap mt-row-proj">
           ${t.project
@@ -1393,7 +1445,30 @@ window.renderMyTasks=function(){
     </div>
 
     ${block('later','🗂','待處理','尚未設定日期的任務',laterTs,`openModalPre('person','${person}','')`,true)}
-    ${doneTs.length?block('done','✅','已完成','',doneTs,`openModalPre('person','${person}','')`,true,false):''}
+    ${doneTs.length?`<div class="mt-block mt-block-full" id="mtb_done">
+      <div class="mt-block-header">
+        <div class="mt-block-title">
+          <span class="mt-block-icon">✅</span>
+          <div>
+            <div class="mt-block-name">已完成</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="mt-block-count">${doneTs.length} 項</span>
+          <button class="btn btn-danger" style="font-size:11px;padding:3px 10px" id="mt-done-select-btn" onclick="toggleDoneSelectMode()">☑ 多選刪除</button>
+        </div>
+      </div>
+      <div id="mt-done-select-bar" style="display:none;padding:6px 1.125rem;background:rgba(184,64,64,.06);border-bottom:1px solid rgba(184,64,64,.15);align-items:center;gap:8px">
+        <span id="mt-done-count" style="font-size:12px;font-weight:500;color:var(--text)">已選 0 項</span>
+        <button class="btn" style="font-size:11px;padding:2px 8px" onclick="selectAllDone()">全選</button>
+        <button class="btn" style="font-size:11px;padding:2px 8px" onclick="deselectAllDone()">取消</button>
+        <button class="btn btn-danger" style="font-size:11px;padding:2px 8px;margin-left:auto" onclick="deleteSelectedDone()">刪除選取</button>
+      </div>
+      <div id="mt-done-list">
+        ${doneTs.map(t=>mtRow2(t,false)).join('')}
+      </div>
+      <div class="mt-add" onclick="openModalPre('person','${person}','')">＋ 新增任務</div>
+    </div>`:''}
 
   </div>`;
 
@@ -1546,8 +1621,16 @@ function renderPDetail(){
   const pname=curProject;
   const ts=tasks.filter(t=>t.project===pname);
   const avgPct=ts.length?Math.round(ts.reduce((a,t)=>a+(t.pct||0),0)/ts.length):0;
-  const domStatus=cs(avgPct);
-  const doneCount=ts.filter(t=>t.pct===100).length;
+  // Use actual status field — pick most "advanced" status among tasks
+  const statusPriority={'完成':4,'審核中':3,'進行中':2,'待辦':1};
+  const statusCounts={'完成':0,'審核中':0,'進行中':0,'待辦':0};
+  ts.forEach(t=>{if(t.status&&statusCounts[t.status]!==undefined)statusCounts[t.status]++;});
+  const allDone=ts.length>0&&ts.every(t=>t.status==='完成');
+  const domStatus=allDone?'完成':
+    statusCounts['進行中']>0?'進行中':
+    statusCounts['審核中']>0?'審核中':
+    ts.length>0?'待辦':'待辦';
+  const doneCount=ts.filter(t=>t.status==='完成'||t.pct===100).length;
   const assignees=[...new Set(ts.map(t=>t.assignee).filter(Boolean))];
   const now=new Date(),nw=new Date();nw.setDate(now.getDate()+7);
   const dueCount=ts.filter(t=>t.date&&new Date(t.date)<=nw&&t.pct<100).length;
@@ -1630,8 +1713,9 @@ function renderPDetail(){
       <td class="td-date">
         <input class="idate-input ${isOv?'overdue':''}" type="date" value="${t.date||''}" data-id="${t.id}">
       </td>
-      <td style="padding:8px 10px">
-        <button class="btn" style="font-size:11px;padding:3px 8px" onclick="openModal('${t.id}')">編輯</button>
+      <td style="padding:8px 10px;white-space:nowrap">
+        <button class="btn" style="font-size:11px;padding:3px 8px" onclick="copyTask('${t.id}')">複製</button>
+        <button class="btn" style="font-size:11px;padding:3px 8px;margin-left:4px" onclick="openModal('${t.id}')">編輯</button>
       </td>
     </tr>`;
   }).join('')
@@ -1817,7 +1901,10 @@ function renderFolderDetail(){
         const asgns=[...new Set(ts.map(t=>t.assignee).filter(Boolean))];
         const avg2=ts.length?Math.round(ts.reduce((a,t)=>a+(t.pct||0),0)/ts.length):0;
         const nd=ts.filter(t=>t.date).sort((a,b)=>new Date(a.date)-new Date(b.date))[0];
-        return`<div class="k-card" onclick="openPDetail('${pn}')" style="cursor:pointer">
+        return`<div class="k-card" draggable="true"
+          ondragstart="dragProject('${pn}',event)"
+          ondragend="dragProjectEnd(event)"
+          onclick="openPDetail('${pn}')" style="cursor:pointer">
           <div class="k-header"><div class="k-name">${pn}</div><span class="badge ${sc(cs(avg2))}">${cs(avg2)}</span></div>
           <div class="k-tasks">${ts.map(t=>`<div class="k-row" onclick="event.stopPropagation();openModal('${t.id}')"><div class="k-desc">${t.task||'（未命名）'}</div><div class="k-bar-wrap"><div class="k-bar-fill" style="width:${t.pct||0}%"></div></div><div class="k-pct">${t.pct||0}%</div></div>`).join('')}</div>
           <div class="k-footer" onclick="event.stopPropagation()">
@@ -1826,7 +1913,13 @@ function renderFolderDetail(){
           </div>
         </div>`;
       }).join('')
-      +`</div><div style="margin-top:12px"><button class="btn" style="font-size:12px" onclick="openAddProjectToFolder('${f.id}')">＋ 加入現有專案</button></div>`;
+      +`</div>
+      <div id="fd-uncat-drop" style="display:none;margin-top:8px;padding:12px;border:2px dashed var(--border);border-radius:var(--radius-sm);text-align:center;font-size:12px;color:var(--text-hint);transition:all .15s"
+        ondragover="event.preventDefault();this.style.borderColor='var(--accent)';this.style.color='var(--accent)';this.style.background='var(--accent-light)'"
+        ondragleave="this.style.borderColor='';this.style.color='';this.style.background=''"
+        ondrop="dropToUncat(event);this.style.borderColor='';this.style.color='';this.style.background=''">
+        ✕ 拖曳到此處移出資料夾
+      </div>`;
   } else {
     body.innerHTML=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;margin-top:4px">
       <div class="flist-head">
@@ -1850,8 +1943,7 @@ function renderFolderDetail(){
           <div class="flist-status"><span class="badge ${sc(cs(avg2))}" style="font-size:10px">${cs(avg2)}</span></div>
         </div>`;
       }).join('')}
-    </div>
-    <div style="margin-top:10px"><button class="btn" style="font-size:12px" onclick="openAddProjectToFolder('${f.id}')">＋ 加入現有專案</button></div>`;
+    </div>`
   }
 }
 
@@ -1935,21 +2027,53 @@ window.removeFromFolder=async function(e,pname,pickerPid){
   }catch(err){alert('儲存失敗：'+err.message);}
 };
 
-window.openAddProjectToFolder=async function(fid){
-  const pjs=projects();
+window.openAddProjectToFolder=function(fid){
   const f=folders.find(x=>x.id===fid);
   if(!f) return;
-  const inFolder=f.projects||[];
-  const available=pjs.filter(p=>!inFolder.includes(p));
-  if(!available.length){alert('所有專案都已在此資料夾中。');return;}
-  const name=prompt('輸入要加入的專案名稱（可輸入多個，用逗號分隔）：\n\n可用專案：\n'+available.join('、'));
-  if(!name||!name.trim()) return;
-  const toAdd=name.split(/[,，]/).map(s=>s.trim()).filter(s=>pjs.includes(s));
-  if(!toAdd.length){alert('找不到符合的專案名稱，請確認拼字。');return;}
-  const newProjs=[...new Set([...inFolder,...toAdd])];
+  const inFolder=new Set(f.projects||[]);
+  const available=projects().filter(p=>!inFolder.has(p));
+
+  // Build a simple modal overlay
+  const existing=$id('add-proj-modal');
+  if(existing) existing.remove();
+
+  const modal=document.createElement('div');
+  modal.id='add-proj-modal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;display:flex;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(3px)';
+  modal.innerHTML=`
+    <div style="background:var(--surface);border-radius:var(--radius);border:1px solid var(--border-strong);padding:1.5rem;width:100%;max-width:420px;max-height:80vh;display:flex;flex-direction:column;box-shadow:var(--shadow-lg)">
+      <div style="font-size:15px;font-weight:600;margin-bottom:1rem">加入專案至「${f.name}」</div>
+      ${available.length===0
+        ?`<div style="color:var(--text-hint);font-size:13px;padding:1rem 0">所有專案都已在此資料夾中</div>`
+        :`<div style="overflow-y:auto;flex:1;margin-bottom:1rem;border:1px solid var(--border);border-radius:var(--radius-sm);max-height:300px">
+          ${available.map(p=>`
+            <label style="display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .1s" onmouseover="this.style.background='var(--surface-2)'" onmouseout="this.style.background=''">
+              <input type="checkbox" value="${p.replace(/"/g,'&quot;')}" style="width:15px;height:15px;accent-color:var(--accent);flex-shrink:0">
+              <span style="font-size:13px">${p}</span>
+            </label>`).join('')}
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:8px">
+          <button class="btn" onclick="document.getElementById('add-proj-modal').remove()">取消</button>
+          <button class="btn btn-primary" onclick="confirmAddProjects('${fid}')">加入選取的專案</button>
+        </div>`}
+      ${available.length===0?`<div style="text-align:right"><button class="btn" onclick="document.getElementById('add-proj-modal').remove()">關閉</button></div>`:''}
+    </div>`;
+  modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
+  document.body.appendChild(modal);
+};
+
+window.confirmAddProjects=async function(fid){
+  const modal=$id('add-proj-modal');
+  if(!modal) return;
+  const checked=[...modal.querySelectorAll('input[type=checkbox]:checked')].map(cb=>cb.value);
+  if(!checked.length){alert('請至少選取一個專案');return;}
+  const f=folders.find(x=>x.id===fid);
+  if(!f) return;
+  const newProjs=[...new Set([...(f.projects||[]),...checked])];
   try{
     await updateDoc(docFn(db,'folders',fid),{projects:newProjs});
-    toast(`已加入 ${toAdd.length} 個專案 ✓`);
+    toast(`已加入 ${checked.length} 個專案 ✓`);
+    modal.remove();
   }catch(e){alert('儲存失敗：'+e.message);}
 };
 
@@ -2373,8 +2497,14 @@ function renderCalPanel(date){
         <div class="cal-panel-dot ${tc.dot}"></div>
         <div class="cal-panel-info">
           <div class="cal-panel-title">${e.title}</div>
-          <div class="cal-panel-meta">${tc.label}${e.project?' · '+e.project:''}${isTask&&e.assignee?' · '+e.assignee:''}</div>
-          ${isTask?`<div style="margin-top:4px;display:flex;align-items:center;gap:6px"><div style="flex:1;height:3px;border-radius:2px;background:var(--bg);overflow:hidden"><div style="width:${e.pct}%;height:100%;background:var(--accent);border-radius:2px"></div></div><span style="font-size:10px;color:var(--text-hint)">${e.pct}%</span></div>`:''}
+          <div class="cal-panel-meta">${tc.label}${e.project?' · '+e.project:''}${isTask&&e.assignee?' · 👤'+e.assignee:''}</div>
+          ${isTask?`<div style="display:flex;align-items:center;gap:6px;margin-top:5px">
+            <div style="flex:1;height:3px;border-radius:2px;background:var(--bg);overflow:hidden">
+              <div style="width:${e.pct}%;height:100%;background:linear-gradient(90deg,var(--accent),#4ade9a);border-radius:2px"></div>
+            </div>
+            <span style="font-size:10px;font-weight:600;color:var(--text-hint);white-space:nowrap">${e.pct}% · ${e.status||'—'}</span>
+          </div>`:''}
+          ${e.note?`<div style="font-size:10px;color:var(--text-hint);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">📝 ${e.note}</div>`:''}
         </div>
         <button class="cal-panel-edit" onclick="event.stopPropagation();${editFn}">${isTask?'編輯任務':'編輯'}</button>
       </div>`;
@@ -2472,8 +2602,12 @@ function renderWeekCal(body){
   const days=Array.from({length:7},(_,i)=>{const d=new Date(ws);d.setDate(ws.getDate()+i);return d;});
   const hdr=days.map((d,i)=>{
     const ds=calDateStr(d.getFullYear(),d.getMonth(),d.getDate());
+    const dayEvs=ebd[ds]||[];
     return`<div class="cal-week-day-hdr${ds===tod?' today':''}${ds===selectedCalDate?' selected':''}" data-date="${ds}" onclick="selectCalDate('${ds}')">
-      <div class="wday">${DAYS[i]}</div><div class="wdate">${d.getDate()}</div></div>`;
+      <div class="wday">${DAYS[i]}</div>
+      <div class="wdate">${d.getDate()}</div>
+      ${dayEvs.length?`<div style="font-size:9px;color:var(--accent);font-weight:600;margin-top:2px">${dayEvs.length} 項</div>`:''}
+    </div>`;
   }).join('');
   const alldayRow=days.map(d=>{
     const ds=calDateStr(d.getFullYear(),d.getMonth(),d.getDate());
@@ -2482,17 +2616,261 @@ function renderWeekCal(body){
     </div>`;
   }).join('');
   const hours=Array.from({length:24},(_,i)=>i);
+  // Build week columns with event blocks at fixed positions
+  const TASK_HOURS={deadline:17,start:9,submit:11,milestone:10,meeting:14,other:9};
+  const weekCols=days.map(d=>{
+    const ds=calDateStr(d.getFullYear(),d.getMonth(),d.getDate());
+    const dayEvs=ebd[ds]||[];
+    const SLOT=44; // px per hour
+    const evBlocks=dayEvs.map((e,idx)=>{
+      const tc=EV_TYPES[e.type]||EV_TYPES.other;
+      const hour=TASK_HOURS[e.type]||9;
+      const top=hour*SLOT+2;
+      const offset=idx*2; // slight horizontal offset for multiple events
+      return`<div class="cal-week-event ${tc.cls}" 
+        style="position:absolute;top:${top}px;left:${2+offset}px;right:${2+offset}px;z-index:${5+idx};border-radius:4px;padding:3px 6px;font-size:11px;font-weight:500;cursor:pointer;line-height:1.3;overflow:hidden"
+        onclick="event.stopPropagation();selectCalDate('${ds}')" title="${e.title}">
+        ${e.title}
+      </div>`;
+    }).join('');
+    return`<div class="cal-week-col${ds===selectedCalDate?' selected':''}" style="position:relative" data-date="${ds}" onclick="selectCalDate('${ds}')">
+      ${hours.map(()=>`<div class="cal-week-hour"></div>`).join('')}
+      ${evBlocks}
+    </div>`;
+  }).join('');
   body.innerHTML=`<div style="display:flex;flex-direction:column;flex:1;min-height:0">
     <div class="cal-week-header"><div style="border-right:1px solid var(--border)"></div>${hdr}</div>
     <div class="cal-allday-row"><div class="cal-allday-label">全天</div>${alldayRow}</div>
     <div class="cal-week-body" style="flex:1;overflow:auto">
       <div class="cal-time-col">${hours.map(h=>`<div class="cal-time-slot">${h?String(h).padStart(2,'0')+':00':''}</div>`).join('')}</div>
-      ${days.map(d=>{
-        const ds=calDateStr(d.getFullYear(),d.getMonth(),d.getDate());
-        return`<div class="cal-week-col${ds===selectedCalDate?' selected':''}" data-date="${ds}" onclick="selectCalDate('${ds}')">
-          ${hours.map(()=>`<div class="cal-week-hour"></div>`).join('')}</div>`;
-      }).join('')}
+      ${weekCols}
     </div></div>`;
+  // Scroll to 8am
+  setTimeout(()=>{
+    const wb=body.querySelector('.cal-week-body');
+    if(wb) wb.scrollTop=8*44;
+  },50);
+}
+
+// ── Drag project to folder ──
+let draggedProject=null;
+
+window.dragProject=function(pname,e){
+  draggedProject=pname;
+  e.stopPropagation();
+  e.dataTransfer.effectAllowed='move';
+  setTimeout(()=>{
+    e.target.closest('.k-card')?.classList.add('dragging');
+    const dz=$id('fd-uncat-drop');
+    if(dz) dz.style.display='';
+  },0);
+};
+window.dragProjectEnd=function(e){
+  draggedProject=null;
+  document.querySelectorAll('.k-card.dragging').forEach(el=>el.classList.remove('dragging'));
+  document.querySelectorAll('.folder-header.drag-over').forEach(el=>el.classList.remove('drag-over'));
+  const dz=$id('fd-uncat-drop');
+  if(dz) dz.style.display='none';
+};
+window.folderDragOver=function(e,fid){
+  e.preventDefault();e.stopPropagation();
+  e.dataTransfer.dropEffect='move';
+  document.querySelectorAll('.folder-header.drag-over').forEach(el=>el.classList.remove('drag-over'));
+  e.currentTarget.classList.add('drag-over');
+};
+window.folderDragLeave=function(e){
+  e.currentTarget.classList.remove('drag-over');
+};
+window.dropToFolder=async function(e,fid){
+  e.preventDefault();e.stopPropagation();
+  e.currentTarget.classList.remove('drag-over');
+  const pname=draggedProject;
+  if(!pname) return;
+  const f=folders.find(x=>x.id===fid);
+  if(!f) return;
+  if((f.projects||[]).includes(pname)){toast('已在此資料夾中');return;}
+  // Remove from other folders first
+  const removes=folders.filter(fl=>fl.id!==fid&&(fl.projects||[]).includes(pname))
+    .map(fl=>updateDoc(docFn(db,'folders',fl.id),{projects:(fl.projects||[]).filter(p=>p!==pname)}));
+  const add=updateDoc(docFn(db,'folders',fid),{projects:[...(f.projects||[]),pname]});
+  try{
+    await Promise.all([...removes,add]);
+    toast(`已移至「${f.name}」✓`);
+  }catch(err){alert('移動失敗：'+err.message);}
+  draggedProject=null;
+};
+window.dropToUncat=async function(e){
+  e.preventDefault();
+  const pname=draggedProject;
+  if(!pname) return;
+  // Remove from all folders
+  const removes=folders.filter(f=>(f.projects||[]).includes(pname))
+    .map(f=>updateDoc(docFn(db,'folders',f.id),{projects:(f.projects||[]).filter(p=>p!==pname)}));
+  try{
+    await Promise.all(removes);
+    if(removes.length) toast('已移出資料夾');
+  }catch(err){alert('移動失敗：'+err.message);}
+  draggedProject=null;
+};
+
+// ── Done block multi-select delete ──
+let doneSelectMode=false;
+const doneSelected=new Set();
+
+window.toggleDoneSelectMode=function(){
+  doneSelectMode=!doneSelectMode;
+  doneSelected.clear();
+  const list=$id('mt-done-list');
+  const bar=$id('mt-done-select-bar');
+  const btn=$id('mt-done-select-btn');
+  if(list) list.classList.toggle('mt-select-mode',doneSelectMode);
+  if(bar) bar.style.display=doneSelectMode?'flex':'none';
+  if(btn){btn.textContent=doneSelectMode?'✕ 取消':'☑ 多選刪除';btn.className=doneSelectMode?'btn':'btn btn-danger';btn.style.cssText='font-size:11px;padding:3px 10px';}
+  document.querySelectorAll('#mt-done-list .mt-row-cb').forEach(cb=>cb.checked=false);
+  document.querySelectorAll('#mt-done-list .mt-row').forEach(r=>r.classList.remove('mt-selected'));
+  updateDoneCount();
+};
+
+window.mtRowClick=function(e,id){
+  if(!doneSelectMode) return;
+  if(e.target.closest('.chk,.ipct-wrap,.iproj-wrap,.idate-input,.mt-tname-edit,.mt-row-cb')) return;
+  const cb=document.querySelector(`#mt-done-list .mt-row-cb[data-id="${id}"]`);
+  if(cb){cb.checked=!cb.checked;mtCbChange(cb);}
+};
+
+window.mtCbChange=function(cb){
+  const id=cb.dataset.id;
+  const row=document.querySelector(`#mt-done-list .mt-row[data-id="${id}"]`);
+  if(cb.checked){doneSelected.add(id);row?.classList.add('mt-selected');}
+  else{doneSelected.delete(id);row?.classList.remove('mt-selected');}
+  updateDoneCount();
+};
+
+function updateDoneCount(){
+  const el=$id('mt-done-count');
+  if(el) el.textContent=`已選 ${doneSelected.size} 項`;
+}
+
+window.selectAllDone=function(){
+  document.querySelectorAll('#mt-done-list .mt-row-cb').forEach(cb=>{
+    cb.checked=true;doneSelected.add(cb.dataset.id);
+    document.querySelector(`#mt-done-list .mt-row[data-id="${cb.dataset.id}"]`)?.classList.add('mt-selected');
+  });
+  updateDoneCount();
+};
+window.deselectAllDone=function(){
+  document.querySelectorAll('#mt-done-list .mt-row-cb').forEach(cb=>cb.checked=false);
+  document.querySelectorAll('#mt-done-list .mt-row').forEach(r=>r.classList.remove('mt-selected'));
+  doneSelected.clear();updateDoneCount();
+};
+window.deleteSelectedDone=async function(){
+  if(!doneSelected.size){alert('請先選取要刪除的項目');return;}
+  if(!confirm(`確定要刪除選取的 ${doneSelected.size} 個已完成任務？此操作無法復原。`)) return;
+  try{
+    await Promise.all([...doneSelected].map(id=>deleteDoc(docFn(db,'tasks',id))));
+    toast(`已刪除 ${doneSelected.size} 個任務`);
+    doneSelectMode=false;doneSelected.clear();
+  }catch(e){alert('刪除失敗：'+e.message);}
+};
+
+// Legacy stubs (keep for safety)
+window.toggleMtSelectMode=window.toggleDoneSelectMode;
+window.selectAllMtTasks=window.selectAllDone;
+window.deselectAllMtTasks=window.deselectAllDone;
+window.deleteSelectedMtTasks=window.deleteSelectedDone;
+
+// ── Mobile nav ──
+window.toggleMobileNav=function(){
+  const sb=$id('sidebar')||document.querySelector('.sidebar');
+  const ov=$id('mobile-overlay');
+  if(!sb||!ov) return;
+  const open=sb.classList.toggle('mobile-open');
+  ov.classList.toggle('show',open);
+};
+
+// ── Project meta edit ──
+window.openEditProjectMeta=function(){
+  const pname=curProject;
+  const meta=projectMeta[pname]||{};
+  $id('pm-name').value=pname||'';
+  $id('pm-client').value=meta.client||'';
+  $id('pm-addr').value=meta.address||'';
+  $id('proj-meta-overlay').classList.add('open');
+  setTimeout(()=>$id('pm-name').focus(),50);
+};
+window.closeEditProjectMeta=function(){
+  $id('proj-meta-overlay').classList.remove('open');
+};
+window.saveProjectMeta=async function(){
+  const newName=$id('pm-name').value.trim();
+  if(!newName){alert('請輸入專案名稱');return;}
+  const client=$id('pm-client').value.trim();
+  const address=$id('pm-addr').value.trim();
+  const oldName=curProject;
+  try{
+    // Update project metadata
+    const meta=projectMeta[oldName];
+    if(meta?.id){
+      await updateDoc(docFn(db,'projects',meta.id),{name:newName,client,address,updatedAt:sts()});
+    } else {
+      await addDoc(projectsCol,{name:newName,client,address,createdAt:sts()});
+    }
+    // If name changed, update all tasks and folders
+    if(newName!==oldName){
+      await Promise.all(tasks.filter(t=>t.project===oldName).map(t=>
+        updateDoc(docFn(db,'tasks',t.id),{project:newName,updatedAt:sts()})
+      ));
+      await Promise.all(folders.filter(f=>(f.projects||[]).includes(oldName)).map(f=>
+        updateDoc(docFn(db,'folders',f.id),{projects:(f.projects||[]).map(p=>p===oldName?newName:p)})
+      ));
+      curProject=newName;
+    }
+    toast('專案資料已更新 ✓');
+    closeEditProjectMeta();
+    renderPDetail();
+  }catch(e){alert('儲存失敗：'+e.message);}
+};
+
+// ── Task copy ──
+window.copyTask=async function(taskId){
+  const t=tasks.find(x=>x.id===taskId);
+  if(!t) return;
+  const copy={
+    project:t.project, task:(t.task||'')+'（複製）',
+    pct:0, status:'待辦', assignee:t.assignee,
+    date:'', note:t.note||'', createdAt:sts(), updatedAt:sts()
+  };
+  try{
+    await addDoc(col,copy);
+    toast('任務已複製 ✓');
+  }catch(e){alert('複製失敗：'+e.message);}
+};
+
+// ── Project sort ──
+function sortProjects(pjsList, grps){
+  const sort=$id('fsort')?.value||'default';
+  if(sort==='default') return pjsList;
+  return [...pjsList].sort((a,b)=>{
+    const ta=grps[a]||[], tb=grps[b]||[];
+    if(sort==='name') return a.localeCompare(b,'zh-TW');
+    if(sort==='pct_asc'||sort==='pct_desc'){
+      const pa=ta.length?ta.reduce((s,t)=>s+(t.pct||0),0)/ta.length:0;
+      const pb=tb.length?tb.reduce((s,t)=>s+(t.pct||0),0)/tb.length:0;
+      return sort==='pct_asc'?pa-pb:pb-pa;
+    }
+    if(sort==='due_asc'){
+      const da=ta.filter(t=>t.date).sort((x,y)=>x.date.localeCompare(y.date))[0]?.date||'9999';
+      const db2=tb.filter(t=>t.date).sort((x,y)=>x.date.localeCompare(y.date))[0]?.date||'9999';
+      return da.localeCompare(db2);
+    }
+    if(sort==='status'){
+      const sp={'進行中':0,'審核中':1,'待辦':2,'完成':3};
+      const sa=ta.some(t=>t.status==='進行中')?0:ta.some(t=>t.status==='審核中')?1:ta.some(t=>t.status==='待辦')?2:3;
+      const sb2=tb.some(t=>t.status==='進行中')?0:tb.some(t=>t.status==='審核中')?1:tb.some(t=>t.status==='待辦')?2:3;
+      return sa-sb2;
+    }
+    return 0;
+  });
 }
 
 // ── Search ──
@@ -2532,14 +2910,29 @@ function runSearch(q){
     }
   });
 
-  // Search projects (unique)
+  // Search projects (unique) — including client and address
   const matchedProjects=new Set();
   tasks.forEach(t=>{
     if(t.project&&t.project.toLowerCase().includes(ql)&&!matchedProjects.has(t.project)){
       matchedProjects.add(t.project);
       const pts=tasks.filter(x=>x.project===t.project);
       const avg=Math.round(pts.reduce((a,x)=>a+(x.pct||0),0)/pts.length);
-      results.unshift({type:'project',title:t.project,sub:`${pts.length} 個任務`,status:cs(avg),pct:avg,project:t.project});
+      const meta=projectMeta[t.project]||{};
+      results.unshift({type:'project',title:t.project,sub:`${pts.length} 個任務${meta.client?' · '+meta.client:''}`,status:cs(avg),pct:avg,project:t.project});
+    }
+  });
+  // Search by client name or address
+  Object.values(projectMeta).forEach(meta=>{
+    if(!meta.name) return;
+    if(matchedProjects.has(meta.name)) return; // already added
+    const fields=[meta.client,meta.address];
+    if(fields.some(f=>f&&f.toLowerCase().includes(ql))){
+      matchedProjects.add(meta.name);
+      const pts=tasks.filter(x=>x.project===meta.name);
+      const avg=pts.length?Math.round(pts.reduce((a,x)=>a+(x.pct||0),0)/pts.length):0;
+      results.unshift({type:'project',title:meta.name,
+        sub:`${pts.length} 個任務${meta.client?' · '+meta.client:''}${meta.address?' · '+meta.address:''}`,
+        status:cs(avg),pct:avg,project:meta.name});
     }
   });
 
