@@ -518,7 +518,7 @@ textarea.fc{resize:vertical;min-height:68px;}
   <nav class="sidebar">
     <div class="sb-label">視圖</div>
     <button class="sb-btn active" onclick="switchNav('project',this)"><span class="sb-icon">⊞</span>專案總覽</button>
-    <button class="sb-btn" onclick="switchNav('mytasks',this)"><span class="sb-icon">☑</span>我的任務</button>
+    <button class="sb-btn" onclick="switchNav('mytasks',this)"><span class="sb-icon">☑</span>工作進度</button>
     <button class="sb-btn" onclick="switchNav('calendar',this)"><span class="sb-icon">📅</span>行事曆</button>
     <button class="sb-btn" onclick="switchNav('members',this)"><span class="sb-icon">👥</span>人員管理</button>
     <div class="sb-divider"></div>
@@ -566,10 +566,38 @@ textarea.fc{resize:vertical;min-height:68px;}
       </div>
     </div>
 
+    <!-- ── 資料夾詳情 ── -->
+    <div id="view-folder" style="display:none">
+      <div class="c-header">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:1rem">
+          <button class="pd-back" onclick="switchNav('project',null)">← 專案總覽</button>
+          <span class="pd-sep">/</span>
+          <span style="display:flex;align-items:center;gap:6px">
+            <span id="fd-icon" style="font-size:16px">📂</span>
+            <span class="pd-current" id="fd-title">資料夾</span>
+          </span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:1rem">
+          <div class="cal-view-toggle">
+            <button class="cal-view-btn active" id="fd-btn-kanban" onclick="setFolderDetailView('kanban',this)">⊞ 看板</button>
+            <button class="cal-view-btn" id="fd-btn-list" onclick="setFolderDetailView('list',this)">☰ 清單</button>
+          </div>
+          <button class="btn btn-primary" style="font-size:12px" id="fd-add-btn">＋ 新增專案</button>
+        </div>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="stat-label">專案數</div><div class="stat-value" id="fd-s-proj">—</div><div class="stat-sub">個專案</div></div>
+        <div class="stat"><div class="stat-label">工作項目</div><div class="stat-value" id="fd-s-task">—</div><div class="stat-sub">個任務</div></div>
+        <div class="stat"><div class="stat-label">平均完成度</div><div class="stat-value" id="fd-s-avg">—</div><div class="stat-sub">整體進度</div></div>
+        <div class="stat"><div class="stat-label">本週到期</div><div class="stat-value" id="fd-s-due">—</div><div class="stat-sub">個項目</div></div>
+      </div>
+      <div id="fd-body" style="padding:0 2rem 2rem"></div>
+    </div>
+
     <!-- ── 我的任務 ── -->
     <div id="view-mytasks" style="display:none">
       <div class="c-header">
-        <div class="c-title" id="mt-title">我的任務</div>
+        <div class="c-title" id="mt-title">工作進度</div>
         <div class="c-tabs"><button class="ctab active">清單</button></div>
       </div>
       <div class="mt-person-bar" id="mt-person-bar">
@@ -659,6 +687,7 @@ textarea.fc{resize:vertical;min-height:68px;}
         </div>
         <div class="pd-actions">
           <span class="badge" id="pd-badge" style="font-size:12px;padding:3px 10px"></span>
+          <button class="btn btn-danger" id="pd-delete-btn" onclick="deleteProject()">刪除專案</button>
           <button class="btn btn-primary" id="pd-add-btn">＋ 新增任務</button>
         </div>
       </div>
@@ -678,8 +707,21 @@ textarea.fc{resize:vertical;min-height:68px;}
       <select class="fc" id="f-project" onchange="handleProjectChange()"><option value="__new__">＋ 新增專案...</option></select>
     </div>
     <div class="fg" id="new-proj-g" style="display:none">
-      <label class="flabel">新專案名稱</label>
-      <input class="fc" type="text" id="f-new-proj" placeholder="請輸入專案名稱">
+      <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.875rem;display:flex;flex-direction:column;gap:.625rem;">
+        <div style="font-size:11px;font-weight:600;color:var(--text-hint);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">新增專案資料</div>
+        <div>
+          <label class="flabel">專案名稱 <span style="color:#b84040">*</span></label>
+          <input class="fc" type="text" id="f-new-proj" placeholder="請輸入專案名稱">
+        </div>
+        <div>
+          <label class="flabel">業主名稱</label>
+          <input class="fc" type="text" id="f-new-proj-client" placeholder="請輸入業主名稱">
+        </div>
+        <div>
+          <label class="flabel">案件基地座落位址</label>
+          <input class="fc" type="text" id="f-new-proj-addr" placeholder="請輸入基地地址">
+        </div>
+      </div>
     </div>
     <div class="fg">
       <label class="flabel">工作項目描述 <span style="color:var(--text-hint);font-weight:400">（可選取或自行輸入）</span></label>
@@ -781,8 +823,8 @@ textarea.fc{resize:vertical;min-height:68px;}
 
 <script>
 const FB={apiKey:"AIzaSyDHiG0qDLqjFgyf40Qmr1CZah3uHMkgIVI",authDomain:"progress-tracking-9f010.firebaseapp.com",projectId:"progress-tracking-system-9f010",storageBucket:"progress-tracking-system-9f010.firebasestorage.app",messagingSenderId:"303666820708",appId:"1:303666820708:web:7b626e91e7e8b251899171"};
-let db,col,folderCol,memberCol,calCol,addDoc,updateDoc,deleteDoc,docFn,sts;
-let tasks=[],folders=[],members=[],calEvents=[],editId=null,editMemberId=null,editCalId=null;
+let db,col,folderCol,memberCol,calCol,projectsCol,addDoc,updateDoc,deleteDoc,docFn,sts;
+let tasks=[],folders=[],members=[],calEvents=[],projectMeta={},editId=null,editMemberId=null,editCalId=null;
 let nav='project',ctab='kanban',curMember=null,apScopes={},collapsed={},folderViews={};
 let calView='month',calYear=new Date().getFullYear(),calMonth=new Date().getMonth(),calWeekStart=null;
 const AVCS=['av-a','av-b','av-c','av-d','av-e','av-f','av-g','av-h'];
@@ -803,7 +845,12 @@ function $id(i){return document.getElementById(i);}
   folderCol=fs.collection(db,'folders');
   memberCol=fs.collection(db,'members');
   calCol=fs.collection(db,'calEvents');
+  projectsCol=fs.collection(db,'projects');
   addDoc=fs.addDoc;updateDoc=fs.updateDoc;deleteDoc=fs.deleteDoc;docFn=fs.doc;sts=fs.serverTimestamp;
+  fs.onSnapshot(projectsCol,snap=>{
+    projectMeta={};
+    snap.docs.forEach(d=>{projectMeta[d.data().name]={id:d.id,...d.data()};});
+  },e=>console.error(e));
   fs.onSnapshot(col,snap=>{
     tasks=snap.docs.map(d=>({id:d.id,...d.data()}));
     $id('sync-dot').className='sync-dot live';$id('sync-text').textContent='即時同步';
@@ -920,6 +967,7 @@ function renderAll(){
   else if(nav==='pdetail')renderPDetail();
   else if(nav==='members')renderMembersPage();
   else if(nav==='calendar')renderCalendar();
+  else if(nav==='folder')renderFolderDetail();
 }
 
 // ── Nav ──
@@ -927,7 +975,7 @@ window.switchNav=function(n,el){
   nav=n;curMember=null;
   document.querySelectorAll('.sb-btn').forEach(e=>e.classList.remove('active'));
   if(el)el.classList.add('active');
-  ['project','mytasks','member','pdetail','members','calendar'].forEach(v=>$id('view-'+v).style.display=v===n?'':'none');
+  ['project','mytasks','member','pdetail','members','calendar','folder'].forEach(v=>$id('view-'+v).style.display=v===n?'':'none');
   renderAll();
 };
 window.switchMember=function(name,el){
@@ -935,7 +983,7 @@ window.switchMember=function(name,el){
   document.querySelectorAll('.sb-btn').forEach(e=>e.classList.remove('active'));
   if(el)el.classList.add('active');
   $id('mem-title').textContent=name+' 的任務';
-  ['project','mytasks','member','pdetail','members','calendar'].forEach(v=>$id('view-'+v).style.display=v==='member'?'':'none');
+  ['project','mytasks','member','pdetail','members','calendar','folder'].forEach(v=>$id('view-'+v).style.display=v==='member'?'':'none');
   renderMember();
 };
 window.switchCtab=function(t,el){
@@ -968,13 +1016,20 @@ window.renderProject=function(){
 
 function renderKanban(pjs,grps){
   const grid=$id('kanban-grid');
-  if(!pjs.length){grid.innerHTML='<div class="empty"><p style="font-size:32px">📋</p><p>目前沒有工作項目，點右上角新增吧！</p></div>';return;}
   const ps=persons();
 
+  // Collect all project names: from tasks + from folder lists
+  const allFolderProjects=new Set(folders.flatMap(f=>f.projects||[]));
+  const allPjs=new Set([...pjs,...allFolderProjects]);
+  // Also ensure grps has entries for folder projects (even empty)
+  allFolderProjects.forEach(pn=>{if(!grps[pn])grps[pn]=[];});
+
+  if(!allPjs.size){grid.innerHTML='<div class="empty"><p style="font-size:32px">📋</p><p>目前沒有工作項目，點右上角新增吧！</p></div>';return;}
+
   function kCard(pn){
-    const ts=grps[pn];if(!ts)return'';
+    const ts=grps[pn]||[];  // show even if no tasks
     const asgns=[...new Set(ts.map(t=>t.assignee).filter(Boolean))];
-    const avg=Math.round(ts.reduce((a,t)=>a+(t.pct||0),0)/ts.length);
+    const avg=ts.length?Math.round(ts.reduce((a,t)=>a+(t.pct||0),0)/ts.length):0;
     const nd=ts.filter(t=>t.date).sort((a,b)=>new Date(a.date)-new Date(b.date))[0];
     const sid='ap_'+pn.replace(/[^\w]/g,'_').slice(0,20);
     // folder badge for this project
@@ -1015,15 +1070,15 @@ function renderKanban(pjs,grps){
   }
 
   // Build sections: folders first, then uncategorised
-  const folderProjectSets=folders.map(f=>new Set(f.projects||[]));
-  const allFolderProjects=new Set(folders.flatMap(f=>f.projects||[]));
-  const uncatProjs=pjs.filter(pn=>!allFolderProjects.has(pn));
+  const allFolderProjectsSet=new Set(folders.flatMap(f=>f.projects||[]));
+  const uncatProjs=[...allPjs].filter(pn=>!allFolderProjectsSet.has(pn));
 
   let html='<div class="kanban-section">';
 
   // Render each folder
   folders.forEach((f,fi)=>{
-    const fProjs=(f.projects||[]).filter(pn=>grps[pn]);
+    const fProjs=(f.projects||[]);  // show ALL projects in folder, with or without tasks
+    const fProjsWithTasks=fProjs.filter(pn=>grps[pn]); // for stats only
     const isOpen=!collapsed['folder_'+f.id];
     const fView=folderViews[f.id]||'kanban'; // 'kanban' or 'list'
     html+=`<div class="folder-block">
@@ -1498,9 +1553,27 @@ function renderPDetail(){
   const dueCount=ts.filter(t=>t.date&&new Date(t.date)<=nw&&t.pct<100).length;
 
   $id('pd-title').textContent=pname;
+  const meta=projectMeta[pname];
   const bdg=$id('pd-badge');
   bdg.textContent=domStatus;
   bdg.className='badge '+sc(domStatus);
+  // Show client and address under title if available
+  let metaHtml='';
+  if(meta?.client||meta?.address){
+    metaHtml=`<div style="display:flex;gap:16px;margin-top:4px;flex-wrap:wrap">
+      ${meta?.client?`<span style="font-size:12px;color:var(--text-hint)">👤 業主：${meta.client}</span>`:''}
+      ${meta?.address?`<span style="font-size:12px;color:var(--text-hint)">📍 ${meta.address}</span>`:''}
+    </div>`;
+  }
+  // Inject after title
+  let titleEl=$id('pd-title');
+  let metaEl=$id('pd-meta-row');
+  if(!metaEl){
+    metaEl=document.createElement('div');
+    metaEl.id='pd-meta-row';
+    titleEl.after(metaEl);
+  }
+  metaEl.innerHTML=metaHtml;
   $id('pd-add-btn').onclick=()=>openModalPre('project',pname,'');
 
   $id('pd-stats').innerHTML=`
@@ -1678,21 +1751,109 @@ function syncSidebarFolders(){
   const sb=$id('sb-folders');
   if(!sb) return;
   sb.innerHTML=folders.map(f=>`
-    <button class="sb-folder-item" onclick="scrollToFolder('${f.id}',this)">
+    <button class="sb-folder-item" id="sbf_${f.id}" onclick="goToFolder('${f.id}')">
       <span class="sb-folder-dot" style="background:${f.color||'#888'}"></span>
       ${f.name}
       <span style="margin-left:auto;font-size:10px;opacity:.5">${(f.projects||[]).length}</span>
     </button>`).join('');
 }
 
-window.scrollToFolder=function(fid,el){
-  switchNav('project',null);
-  document.querySelectorAll('.sb-btn').forEach(e=>e.classList.remove('active'));
-  setTimeout(()=>{
-    const header=document.querySelector(`.folder-header[data-fid="${fid}"]`);
-    if(header) header.scrollIntoView({behavior:'smooth',block:'start'});
-  },100);
+let curFolder=null;
+let folderDetailView='kanban';
+
+window.goToFolder=function(fid){
+  curFolder=fid;
+  nav='folder';
+  document.querySelectorAll('.sb-btn,.sb-folder-item').forEach(e=>e.classList.remove('active'));
+  const sbBtn=$id('sbf_'+fid);if(sbBtn)sbBtn.classList.add('active');
+  ['project','mytasks','member','pdetail','members','calendar','folder'].forEach(v=>{
+    $id('view-'+v).style.display=v==='folder'?'':'none';
+  });
+  renderFolderDetail();
 };
+window.highlightFolder=window.goToFolder;
+
+window.setFolderDetailView=function(v,el){
+  folderDetailView=v;
+  document.querySelectorAll('#fd-btn-kanban,#fd-btn-list').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  renderFolderDetail();
+};
+
+function renderFolderDetail(){
+  const f=folders.find(x=>x.id===curFolder);
+  if(!f)return;
+  $id('fd-title').textContent=f.name;
+  $id('fd-icon').style.color=f.color||'#888';
+  $id('fd-add-btn').onclick=()=>openModal();
+
+  const fProjs=f.projects||[];
+  const allT=tasks.filter(t=>fProjs.includes(t.project));
+  const grps={};
+  allT.forEach(t=>{if(!grps[t.project])grps[t.project]=[];grps[t.project].push(t);});
+
+  const now=new Date(),nw=new Date();nw.setDate(now.getDate()+7);
+  const avg=allT.length?Math.round(allT.reduce((a,t)=>a+(t.pct||0),0)/allT.length):0;
+  const due=allT.filter(t=>t.date&&new Date(t.date)>=now&&new Date(t.date)<=nw&&t.pct<100).length;
+  $id('fd-s-proj').textContent=fProjs.length;
+  $id('fd-s-task').textContent=allT.length;
+  $id('fd-s-avg').textContent=avg+'%';
+  $id('fd-s-due').textContent=due;
+
+  const body=$id('fd-body');
+  if(!fProjs.length){
+    body.innerHTML=`<div class="empty" style="padding-top:3rem">
+      <div style="font-size:32px">📁</div>
+      <p style="margin-top:8px">此資料夾還沒有專案</p>
+      <button class="btn btn-primary" style="margin-top:12px" onclick="openAddProjectToFolder('${f.id}')">＋ 加入現有專案</button>
+    </div>`;
+    return;
+  }
+
+  if(folderDetailView==='kanban'){
+    body.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px;padding-top:4px">`
+      +fProjs.map(pn=>{
+        const ts=grps[pn]||[];
+        const asgns=[...new Set(ts.map(t=>t.assignee).filter(Boolean))];
+        const avg2=ts.length?Math.round(ts.reduce((a,t)=>a+(t.pct||0),0)/ts.length):0;
+        const nd=ts.filter(t=>t.date).sort((a,b)=>new Date(a.date)-new Date(b.date))[0];
+        return`<div class="k-card" onclick="openPDetail('${pn}')" style="cursor:pointer">
+          <div class="k-header"><div class="k-name">${pn}</div><span class="badge ${sc(cs(avg2))}">${cs(avg2)}</span></div>
+          <div class="k-tasks">${ts.map(t=>`<div class="k-row" onclick="event.stopPropagation();openModal('${t.id}')"><div class="k-desc">${t.task||'（未命名）'}</div><div class="k-bar-wrap"><div class="k-bar-fill" style="width:${t.pct||0}%"></div></div><div class="k-pct">${t.pct||0}%</div></div>`).join('')}</div>
+          <div class="k-footer" onclick="event.stopPropagation()">
+            <div class="avatars">${asgns.map(a=>`<div class="av ${gav(a)}" title="${a}">${ini(a)}</div>`).join('')}</div>
+            ${nd?`<div class="due ${ov(nd.date)&&nd.pct<100?'overdue':''}">到期 ${nd.date}</div>`:''}
+          </div>
+        </div>`;
+      }).join('')
+      +`</div><div style="margin-top:12px"><button class="btn" style="font-size:12px" onclick="openAddProjectToFolder('${f.id}')">＋ 加入現有專案</button></div>`;
+  } else {
+    body.innerHTML=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;margin-top:4px">
+      <div class="flist-head">
+        <span class="flist-name" style="font-size:10px">專案名稱</span>
+        <span class="flist-pct" style="font-size:10px">進度</span>
+        <span class="flist-persons" style="font-size:10px">負責人</span>
+        <span class="flist-date" style="font-size:10px">截止日</span>
+        <span class="flist-status" style="font-size:10px">狀態</span>
+      </div>
+      ${fProjs.map(pn=>{
+        const ts=grps[pn]||[];
+        const avg2=ts.length?Math.round(ts.reduce((a,t)=>a+(t.pct||0),0)/ts.length):0;
+        const asgns=[...new Set(ts.map(t=>t.assignee).filter(Boolean))];
+        const nd=ts.filter(t=>t.date).sort((a,b)=>new Date(a.date)-new Date(b.date))[0];
+        const isOv=nd&&ov(nd.date)&&avg2<100;
+        return`<div class="flist-row" onclick="openPDetail('${pn}')">
+          <div class="flist-name"><div style="font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${pn}</div><div style="font-size:10px;color:var(--text-hint)">${ts.length} 項任務</div></div>
+          <div class="flist-pct"><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:4px;border-radius:2px;background:var(--bg);overflow:hidden"><div style="width:${avg2}%;height:100%;background:linear-gradient(90deg,var(--accent),#4ade9a);border-radius:2px"></div></div><span style="font-size:11px;font-weight:600;color:var(--text-muted);width:32px;text-align:right">${avg2}%</span></div></div>
+          <div class="flist-persons">${asgns.slice(0,4).map(a=>`<div class="av ${gav(a)}" style="width:20px;height:20px;font-size:8px;border:1.5px solid var(--surface);margin-left:-3px" title="${a}">${ini(a)}</div>`).join('')}</div>
+          <div class="flist-date${isOv?' flist-overdue':''}">${nd?nd.date.slice(5).replace('-','/'):' — '}</div>
+          <div class="flist-status"><span class="badge ${sc(cs(avg2))}" style="font-size:10px">${cs(avg2)}</span></div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div style="margin-top:10px"><button class="btn" style="font-size:12px" onclick="openAddProjectToFolder('${f.id}')">＋ 加入現有專案</button></div>`;
+  }
+}
 
 window.createFolder=async function(){
   const name=prompt('資料夾名稱：');
@@ -1871,7 +2032,13 @@ window.openModalPre=function(type,val,date){
   else{const per=$id('f-person');if([...per.options].some(o=>o.value===val))per.value=val;$id('new-person-g').style.display=per.value==='__new__'?'':'none';}
   if(date!==undefined) $id('f-date').value=date;
 };
-window.closeModal=function(){$id('overlay').classList.remove('open');editId=null;};
+window.closeModal=function(){
+  $id('overlay').classList.remove('open');
+  editId=null;
+  $id('f-new-proj').value='';
+  const c=$id('f-new-proj-client');if(c)c.value='';
+  const a=$id('f-new-proj-addr');if(a)a.value='';
+};
 window.handleOverlayClick=function(e){if(e.target===$id('overlay'))closeModal();};
 window.handleProjectChange=function(){$id('new-proj-g').style.display=$id('f-project').value==='__new__'?'':'none';};
 window.showAddPersonInput=function(){
@@ -1887,7 +2054,12 @@ $id('f-person').addEventListener('change',function(){
 
 window.saveTask=async function(){
   let project=$id('f-project').value;
-  if(project==='__new__'){project=$id('f-new-proj').value.trim();if(!project){alert('請輸入專案名稱');return;}}
+  let isNewProject=false;
+  if(project==='__new__'){
+    project=$id('f-new-proj').value.trim();
+    if(!project){alert('請輸入專案名稱');return;}
+    isNewProject=true;
+  }
   const task=$id('f-task').value.trim();if(!task){alert('請填寫工作項目描述');return;}
   const pct=parseInt($id('f-pct').value)||0;
   let assignee=$id('f-person').value;
@@ -1898,6 +2070,16 @@ window.saveTask=async function(){
   try{
     if(editId){await updateDoc(docFn(db,'tasks',editId),payload);toast('已更新 ✓');}
     else{await addDoc(col,{...payload,createdAt:sts()});toast('已新增 ✓');}
+    // Save project metadata if new project
+    if(isNewProject){
+      const client=$id('f-new-proj-client').value.trim();
+      const addr=$id('f-new-proj-addr').value.trim();
+      if(!projectMeta[project]){
+        await addDoc(projectsCol,{name:project,client,address:addr,createdAt:sts()});
+      }
+      $id('f-new-proj-client').value='';
+      $id('f-new-proj-addr').value='';
+    }
     // Auto-add new person to members collection if not already there
     if(assignee&&!members.find(m=>m.name===assignee)){
       await addDoc(memberCol,{name:assignee,role:'',note:'',createdAt:sts()});
@@ -2445,6 +2627,31 @@ document.addEventListener('keydown',e=>{
     $id('search-input').focus();
   }
 });
+
+// ── Delete project ──
+window.deleteProject=async function(){
+  const pname=curProject;
+  if(!pname) return;
+  const ts=tasks.filter(t=>t.project===pname);
+  const msg=ts.length>0
+    ?`確定要刪除「${pname}」？\n此專案有 ${ts.length} 個工作項目，全部會一併刪除。\n\n此操作無法復原。`
+    :`確定要刪除「${pname}」？\n\n此操作無法復原。`;
+  if(!confirm(msg)) return;
+  try{
+    // Delete all tasks in project
+    await Promise.all(ts.map(t=>deleteDoc(docFn(db,'tasks',t.id))));
+    // Remove from all folders
+    const folderUpdates=folders.filter(f=>(f.projects||[]).includes(pname));
+    await Promise.all(folderUpdates.map(f=>
+      updateDoc(docFn(db,'folders',f.id),{projects:(f.projects||[]).filter(p=>p!==pname)})
+    ));
+    // Delete project metadata if exists
+    const meta=projectMeta[pname];
+    if(meta?.id) await deleteDoc(docFn(db,'projects',meta.id));
+    toast(`「${pname}」已刪除`);
+    switchNav('project',null);
+  }catch(e){alert('刪除失敗：'+e.message);}
+};
 
 // ── Delete task ──
 window.deleteTask=async function(){
