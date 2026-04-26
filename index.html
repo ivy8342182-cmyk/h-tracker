@@ -1,0 +1,2449 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1c1c1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="工作追蹤">
+<meta name="description" content="黃琮福建築師事務所 工作進度追蹤管理系統">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>黃琮福建築師事務所 — 工作進度</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600&display=swap');
+
+:root {
+  --bg:#f0ede8;
+  --surface:#faf9f7;
+  --surface-2:#f5f3ef;
+  --border:rgba(0,0,0,.07);
+  --border-strong:rgba(0,0,0,.14);
+  --text:#181715;
+  --text-muted:#6a6860;
+  --text-hint:#a8a59f;
+  --accent:#1a8f68;
+  --accent-2:#16775a;
+  --accent-light:rgba(26,143,104,.1);
+  --accent-pill:#e6f5f0;
+  --accent-pill-text:#0d6b4a;
+  --sb-bg:#1c1c1a;
+  --sb-text:rgba(255,255,255,.55);
+  --sb-text-active:#fff;
+  --sb-active:rgba(255,255,255,.09);
+  --sb-hover:rgba(255,255,255,.05);
+  --sb-border:rgba(255,255,255,.07);
+  --radius:14px;
+  --radius-sm:9px;
+  --radius-xs:6px;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.05);
+  --shadow-md:0 4px 16px rgba(0,0,0,.1),0 2px 6px rgba(0,0,0,.06);
+  --shadow-lg:0 12px 40px rgba(0,0,0,.14),0 4px 12px rgba(0,0,0,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans TC',-apple-system,'Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased;}
+
+/* ── Header ── */
+.header{background:var(--sb-bg);padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:54px;position:sticky;top:0;z-index:50;}
+.brand{display:flex;align-items:center;gap:10px;}
+.brand-mark{width:30px;height:30px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:8px;display:flex;align-items:center;justify-content:center;}
+.brand-mark span{color:rgba(255,255,255,.9);font-size:13px;font-weight:600;letter-spacing:-.5px;}
+.brand-name{font-size:13px;font-weight:500;color:rgba(255,255,255,.85);letter-spacing:.01em;}
+.brand-sub{font-size:11px;color:rgba(255,255,255,.35);letter-spacing:.02em;margin-top:1px;}
+.header-right{display:flex;align-items:center;gap:10px;}
+.sync-status{font-size:11px;color:rgba(255,255,255,.35);display:flex;align-items:center;gap:5px;}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.2);}
+.sync-dot.live{background:#4ade9a;animation:pulse 2.5s infinite;}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(74,222,154,.4)}50%{opacity:.7;box-shadow:0 0 0 4px rgba(74,222,154,0)}}
+
+/* ── App shell ── */
+.app{display:flex;height:calc(100vh - 54px);}
+
+/* ── Sidebar ── */
+.sidebar{width:220px;flex-shrink:0;background:var(--sb-bg);overflow-y:auto;padding:1rem 0;display:flex;flex-direction:column;gap:2px;}
+.sb-section{padding:0 .625rem;margin-bottom:.25rem;}
+.sb-label{font-size:10px;color:rgba(255,255,255,.28);text-transform:uppercase;letter-spacing:.1em;padding:.75rem .75rem .3rem;}
+.sb-btn{display:flex;align-items:center;gap:9px;padding:8px 12px;border-radius:var(--radius-xs);font-size:13px;color:var(--sb-text);cursor:pointer;border:none;background:none;width:100%;text-align:left;transition:all .15s;font-family:inherit;}
+.sb-btn:hover{background:var(--sb-hover);color:rgba(255,255,255,.75);}
+.sb-btn.active{background:var(--sb-active);color:var(--sb-text-active);font-weight:500;}
+.sb-btn.active .sb-icon{color:#4ade9a;}
+.sb-icon{font-size:14px;width:18px;text-align:center;opacity:.7;}
+.sb-btn.active .sb-icon{opacity:1;}
+.sb-divider{height:1px;background:var(--sb-border);margin:.5rem .75rem;}
+.sb-av{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex-shrink:0;}
+.av-a{background:#3d3066;color:#c4b8f5;}
+.av-b{background:#1a4035;color:#5fd4a8;}
+.av-c{background:#4a2018;color:#f5a07a;}
+.av-d{background:#3d1530;color:#f09abf;}
+.av-e{background:#1a2e50;color:#7ab5f0;}
+.av-f{background:#3d3a10;color:#d4c84a;}
+.av-g{background:#2a1a40;color:#b87af5;}
+.av-h{background:#1a3530;color:#5fd4c8;}
+
+/* ── Content area ── */
+.content{flex:1;overflow-y:auto;min-width:0;display:flex;flex-direction:column;background:var(--bg);}
+.c-header{background:var(--surface);border-bottom:1px solid var(--border);padding:1.375rem 2rem 0;flex-shrink:0;}
+.c-title{font-size:20px;font-weight:600;margin-bottom:1rem;color:var(--text);letter-spacing:-.02em;}
+.c-tabs{display:flex;gap:0;}
+.ctab{font-size:12px;font-weight:500;padding:8px 16px;border:none;background:none;cursor:pointer;color:var(--text-hint);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;letter-spacing:.02em;font-family:inherit;}
+.ctab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:600;}
+.ctab:hover{color:var(--text-muted);}
+
+/* ── Toolbar ── */
+.toolbar{background:var(--surface);border-bottom:1px solid var(--border);padding:.625rem 2rem;display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex-shrink:0;}
+.toolbar-left{display:flex;gap:6px;flex:1;flex-wrap:wrap;}
+select,input[type="text"]{font-size:12px;padding:5px 10px;border:1px solid var(--border-strong);border-radius:var(--radius-xs);background:var(--surface);color:var(--text);appearance:none;-webkit-appearance:none;cursor:pointer;font-family:inherit;transition:border-color .15s;}
+select:focus,input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-light);}
+
+/* ── Stats ── */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:1.25rem 2rem;}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1rem 1.25rem;box-shadow:var(--shadow-sm);position:relative;overflow:hidden;}
+.stat::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),#4ade9a);opacity:.6;}
+.stat-label{font-size:10px;color:var(--text-hint);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em;font-weight:500;}
+.stat-value{font-size:26px;font-weight:600;line-height:1;letter-spacing:-.03em;color:var(--text);}
+.stat-sub{font-size:11px;color:var(--text-hint);margin-top:3px;}
+
+/* ── Buttons ── */
+.btn{font-size:12px;font-weight:500;padding:7px 14px;border:1px solid var(--border-strong);border-radius:var(--radius-xs);background:transparent;color:var(--text);cursor:pointer;transition:all .15s;white-space:nowrap;font-family:inherit;letter-spacing:.01em;}
+.btn:hover{background:var(--surface-2);border-color:rgba(0,0,0,.2);}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent);box-shadow:0 2px 8px rgba(26,143,104,.3);}
+.btn-primary:hover{background:var(--accent-2);border-color:var(--accent-2);box-shadow:0 3px 12px rgba(26,143,104,.4);}
+.btn-danger{color:#b84040;border-color:rgba(184,64,64,.25);}
+.btn-danger:hover{background:#fdf0f0;border-color:rgba(184,64,64,.4);}
+
+/* ── Kanban cards ── */
+.kanban{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px;padding:1.25rem 2rem 2rem;}
+.k-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;transition:all .2s;box-shadow:var(--shadow-sm);position:relative;}
+.k-card:hover{box-shadow:var(--shadow-md);transform:translateY(-1px);border-color:rgba(0,0,0,.12);}
+.k-card::before{content:'';position:absolute;top:0;left:1rem;right:1rem;height:2px;border-radius:0 0 2px 2px;background:linear-gradient(90deg,var(--accent) 0%,transparent 100%);opacity:0;transition:opacity .2s;}
+.k-card:hover::before{opacity:.5;}
+.k-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;gap:8px;}
+.k-name{font-size:13px;font-weight:600;line-height:1.4;color:var(--text);letter-spacing:-.01em;}
+.badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0;letter-spacing:.03em;}
+.b-ongoing{background:#dbeafe;color:#1e50a2;}
+.b-review{background:#fef3c7;color:#92550a;}
+.b-done{background:#d1fae5;color:#065f46;}
+.b-pending{background:#f3f4f6;color:#4b5563;}
+.k-tasks{margin-bottom:12px;}
+.k-row{display:flex;align-items:center;gap:8px;padding:5px 4px;border-radius:var(--radius-xs);cursor:pointer;transition:background .12s;}
+.k-row:hover{background:var(--surface-2);}
+.k-desc{font-size:12px;color:var(--text-muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.k-bar-wrap{flex:0 0 44px;height:3px;border-radius:2px;background:var(--bg);overflow:hidden;}
+.k-bar-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--accent),#4ade9a);}
+.k-pct{font-size:10px;font-weight:600;min-width:24px;text-align:right;color:var(--text-hint);}
+.k-footer{display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid var(--border);}
+.avatars{display:flex;}
+.av{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;border:2px solid var(--surface);margin-left:-5px;box-shadow:0 0 0 .5px rgba(0,0,0,.08);}
+.av:first-child{margin-left:0;}
+.due{font-size:10px;color:var(--text-hint);font-weight:500;}
+.due.overdue{color:#b84040;}
+
+/* ── Assign ── */
+.assign-btn{font-size:10px;font-weight:600;padding:3px 9px;border:1px solid var(--border-strong);border-radius:20px;background:transparent;color:var(--text-hint);cursor:pointer;transition:all .15s;letter-spacing:.03em;}
+.assign-btn:hover{background:var(--accent-pill);color:var(--accent-pill-text);border-color:rgba(26,143,104,.3);}
+.ap-wrap{position:relative;}
+.ap{display:none;position:absolute;bottom:calc(100% + 6px);right:0;background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--radius-sm);min-width:175px;z-index:100;overflow:hidden;box-shadow:var(--shadow-lg);}
+.ap.open{display:block;}
+.ap-head{font-size:10px;color:var(--text-hint);padding:8px 12px 4px;text-transform:uppercase;letter-spacing:.08em;font-weight:600;border-bottom:1px solid var(--border);}
+.ap-person{display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;font-size:13px;transition:background .1s;}
+.ap-person:hover{background:var(--surface-2);}
+.ap-scope{display:flex;border-bottom:1px solid var(--border);}
+.ap-scope-btn{flex:1;font-size:11px;font-weight:500;padding:7px;border:none;background:transparent;cursor:pointer;color:var(--text-hint);transition:all .15s;font-family:inherit;}
+.ap-scope-btn:hover{background:var(--surface-2);}
+.ap-scope-btn.active{background:var(--accent-pill);color:var(--accent-pill-text);}
+.ap-scope-btn:first-child{border-right:1px solid var(--border);}
+
+/* ── List table ── */
+.list-wrap{padding:.75rem 2rem 2rem;}
+.ls{margin-bottom:0;}
+.ls-hdr{display:flex;align-items:center;gap:8px;padding:12px 0 4px;cursor:pointer;user-select:none;}
+.ls-tog{font-size:8px;color:var(--text-hint);width:12px;transition:transform .15s;}
+.ls-tog.col{transform:rotate(-90deg);}
+.ls-title{font-size:12px;font-weight:600;color:var(--text-muted);letter-spacing:.03em;text-transform:uppercase;}
+.ls-count{font-size:11px;color:var(--text-hint);background:var(--surface-2);border:1px solid var(--border);border-radius:20px;padding:0 7px;line-height:1.8;}
+.lt{width:100%;border-collapse:collapse;background:var(--surface);border-radius:var(--radius-sm);overflow:hidden;box-shadow:var(--shadow-sm);border:1px solid var(--border);}
+.lt th{font-size:10px;font-weight:600;color:var(--text-hint);text-align:left;padding:7px 10px;background:var(--surface-2);border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.06em;}
+.lt th:first-child{padding-left:14px;}
+.lt td{border-bottom:1px solid var(--border);vertical-align:middle;}
+.lt tr:last-child td{border-bottom:none;}
+.lt tbody tr{transition:background .1s;}
+.lt tbody tr:hover{background:var(--surface-2);}
+.lt-name{display:flex;align-items:center;gap:8px;padding:9px 10px 9px 6px;}
+.chk{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--border-strong);display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;transition:all .15s;}
+.chk:hover{border-color:var(--accent);background:var(--accent-light);}
+.chk.done{background:var(--accent);border-color:var(--accent);}
+.chk.done::after{content:'✓';font-size:8px;color:#fff;font-weight:700;}
+.tname{font-size:13px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;font-weight:400;}
+.tname:hover{color:var(--accent);}
+.tname.struck{color:var(--text-hint);text-decoration:line-through;}
+.td-date{padding:9px 10px;font-size:11px;font-weight:500;color:var(--text-muted);white-space:nowrap;min-width:90px;}
+.td-date.overdue{color:#b84040;}
+.td-pct{padding:9px 10px;min-width:90px;}
+.pct-inner{display:flex;align-items:center;gap:6px;}
+.pct-bar{flex:1;height:3px;border-radius:2px;background:var(--bg);overflow:hidden;min-width:36px;}
+.pct-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--accent),#4ade9a);}
+.pct-num{font-size:11px;font-weight:600;color:var(--text-muted);min-width:24px;}
+.td-proj{padding:9px 10px;white-space:nowrap;}
+.td-person{padding:9px 10px;}
+.proj-pill{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:500;padding:2px 8px;border-radius:20px;background:var(--accent-pill);color:var(--accent-pill-text);}
+.add-row{display:flex;align-items:center;gap:7px;padding:8px 10px 8px 14px;font-size:12px;color:var(--text-hint);cursor:pointer;background:var(--surface);border-top:1px dashed var(--border);border-radius:0 0 var(--radius-sm) var(--radius-sm);}
+.add-row:hover{color:var(--accent);background:var(--surface-2);}
+
+/* ── Folders ── */
+.kanban-section { padding: 0 2rem 1.5rem; width: 100%; }
+.folder-block { margin-bottom: 1.25rem; width: 100%; }
+.folder-header { display: flex; align-items: center; gap: 10px; padding: 8px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; user-select: none; margin-bottom: 8px; transition: all .15s; width: 100%; }
+.folder-header:hover { border-color: var(--border-strong); box-shadow: var(--shadow-sm); }
+.folder-icon { font-size: 16px; transition: transform .2s; }
+.folder-icon.open { transform: rotate(0deg); }
+.folder-name { font-size: 13px; font-weight: 600; color: var(--text); flex: 1; }
+.folder-name-input { font-size: 13px; font-weight: 600; color: var(--text); border: none; background: transparent; outline: none; flex: 1; font-family: inherit; }
+.folder-name-input:focus { outline: 2px solid var(--accent); border-radius: 4px; padding: 0 4px; }
+.folder-count { font-size: 11px; color: var(--text-hint); background: var(--bg); border: 1px solid var(--border); border-radius: 20px; padding: 1px 8px; white-space:nowrap; flex-shrink:0; }
+.folder-color { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.folder-actions { display: flex; gap: 4px; opacity: 0; transition: opacity .15s; flex-shrink:0; }
+.folder-header:hover .folder-actions { opacity: 1; }
+.folder-name-input { font-size: 13px; font-weight: 600; color: var(--text); border: none; background: transparent; outline: none; flex: 1; font-family: inherit; min-width: 0; overflow:hidden; text-overflow:ellipsis; }
+.folder-name-input:focus { outline: 2px solid var(--accent); border-radius: 4px; padding: 0 4px; }
+.folder-action-btn { font-size: 11px; padding: 2px 7px; border: 1px solid var(--border-strong); border-radius: var(--radius-xs); background: var(--surface); color: var(--text-muted); cursor: pointer; transition: all .15s; }
+.folder-action-btn:hover { background: var(--surface-2); color: var(--text); }
+.folder-action-btn.danger:hover { background: #fdf0f0; color: #b84040; border-color: rgba(184,64,64,.3); }
+.folder-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(290px,1fr)); gap: 12px; padding: 0 0 4px 1.25rem; border-left: 2px solid var(--border); margin-left: 8px; }
+.fv-toggle { display:flex; border:1px solid var(--border-strong); border-radius:var(--radius-xs); overflow:hidden; }
+.fv-btn { font-size:13px; padding:3px 8px; border:none; background:transparent; cursor:pointer; color:var(--text-hint); transition:all .15s; line-height:1; }
+.fv-btn:hover { background:var(--surface-2); color:var(--text); }
+.fv-btn.active { background:var(--accent-pill); color:var(--accent-pill-text); }
+.folder-list-wrap { margin-bottom: 4px; width: 100%; }
+.flist-head { display:flex; align-items:center; gap:0; padding:6px 14px; background:var(--surface-2); border-bottom:1px solid var(--border); font-size:10px; font-weight:600; color:var(--text-hint); text-transform:uppercase; letter-spacing:.06em; }
+.flist-row { display:flex; align-items:center; gap:0; padding:11px 14px; border-bottom:1px solid var(--border); cursor:pointer; transition:background .1s; }
+.flist-row:last-child { border-bottom:none; }
+.flist-row:hover { background:var(--surface-2); }
+.flist-name { flex:1; min-width:0; padding-right:12px; }
+.flist-pct { width:160px; flex-shrink:0; padding-right:12px; }
+.flist-persons { width:100px; flex-shrink:0; display:flex; padding-right:8px; }
+.flist-date { width:80px; flex-shrink:0; font-size:11px; font-weight:500; color:var(--text-muted); white-space:nowrap; }
+.flist-date.flist-overdue { color:#b84040; }
+.flist-status { width:72px; flex-shrink:0; }
+.folder-drop-zone { border: 2px dashed var(--border); border-radius: var(--radius-sm); padding: 1rem; text-align: center; font-size: 12px; color: var(--text-hint); margin: 0 0 4px 1.25rem; cursor: pointer; transition: all .15s; }
+.folder-drop-zone:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+.folder-collapsed .folder-grid,.folder-collapsed .folder-drop-zone { display: none; }
+/* Uncategorised section */
+.uncat-label { font-size: 10px; font-weight: 600; color: var(--text-hint); text-transform: uppercase; letter-spacing: .08em; padding: 4px 0 8px; }
+/* Assign project to folder popup on card */
+.k-card-folder-btn { font-size: 10px; color: var(--text-hint); cursor: pointer; padding: 1px 5px; border-radius: 4px; border: 1px solid var(--border); background: transparent; font-family: inherit; }
+.k-card-folder-btn:hover { background: var(--surface-2); color: var(--text); }
+/* Sidebar folder list */
+.sb-folder-item { display: flex; align-items: center; gap: 7px; padding: 5px 12px 5px 1rem; font-size: 12px; color: var(--sb-text); cursor: pointer; border: none; background: none; width: 100%; text-align: left; transition: background .1s; border-radius: var(--radius-xs); }
+.sb-folder-item:hover { background: var(--sb-hover); color: rgba(255,255,255,.75); }
+.sb-folder-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── Member management page ── */
+.mgmt-wrap { padding: 1.5rem 2rem 2rem; }
+.mgmt-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; margin-top: 1rem; }
+.member-mgmt-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; display: flex; flex-direction: column; gap: 10px; box-shadow: var(--shadow-sm); transition: all .2s; }
+.member-mgmt-card:hover { box-shadow: var(--shadow-md); border-color: var(--border-strong); }
+.member-mgmt-top { display: flex; align-items: center; gap: 12px; }
+.member-mgmt-av { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 600; flex-shrink: 0; }
+.member-mgmt-info { flex: 1; min-width: 0; }
+.member-mgmt-name { font-size: 15px; font-weight: 600; color: var(--text); letter-spacing: -.01em; }
+.member-mgmt-role { font-size: 12px; color: var(--text-hint); margin-top: 2px; }
+.member-mgmt-stats { display: flex; gap: 12px; padding: 8px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.member-mgmt-stat { display: flex; flex-direction: column; align-items: center; flex: 1; }
+.member-mgmt-stat-val { font-size: 18px; font-weight: 600; color: var(--text); letter-spacing: -.02em; }
+.member-mgmt-stat-lbl { font-size: 10px; color: var(--text-hint); margin-top: 2px; }
+.member-mgmt-actions { display: flex; gap: 6px; }
+.member-mgmt-note { font-size: 12px; color: var(--text-muted); background: var(--surface-2); border-radius: var(--radius-xs); padding: 6px 10px; }
+/* Add member card */
+.add-member-card { background: transparent; border: 2px dashed var(--border); border-radius: var(--radius); padding: 1.25rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: all .2s; min-height: 160px; }
+.add-member-card:hover { border-color: var(--accent); background: var(--accent-light); }
+.add-member-card-icon { font-size: 28px; color: var(--text-hint); }
+.add-member-card-label { font-size: 13px; color: var(--text-hint); font-weight: 500; }
+/* Member modal */
+.member-modal-av-row { display: flex; align-items: center; gap: 16px; margin-bottom: 1rem; }
+.member-modal-av-preview { width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 600; flex-shrink: 0; }
+.pd-breadcrumb{display:flex;align-items:center;gap:8px;margin-bottom:1rem;}
+.pd-back{font-size:13px;color:var(--accent);background:none;border:none;cursor:pointer;padding:0;font-family:inherit;font-weight:500;transition:opacity .15s;}
+.pd-back:hover{opacity:.7;}
+.pd-sep{color:var(--text-hint);font-size:13px;}
+.pd-current{font-size:18px;font-weight:600;color:var(--text);letter-spacing:-.02em;}
+.pd-actions{display:flex;align-items:center;gap:10px;margin-bottom:1rem;}
+.pd-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:0 2rem 1rem;}
+/* pd task rows reuse lt table styles, add editable name */
+.pd-tname-edit{font-size:13px;flex:1;border:none;outline:none;background:transparent;color:var(--text);padding:0;font-family:inherit;min-width:0;width:100%;}
+.pd-tname-edit:focus{background:var(--surface-2);border-radius:4px;padding:2px 6px;outline:2px solid var(--accent);outline-offset:1px;}
+.pd-tname-edit.struck{color:var(--text-hint);text-decoration:line-through;}
+.pd-note{font-size:11px;color:var(--text-hint);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.pd-phase-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+
+/* ── My Tasks person chip bar ── */
+.mt-person-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: .75rem 2rem; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex-shrink: 0; }
+.mt-person-bar-label { font-size: 11px; font-weight: 600; color: var(--text-hint); text-transform: uppercase; letter-spacing: .06em; margin-right: 4px; white-space: nowrap; }
+.person-chip { display: flex; align-items: center; gap: 7px; padding: 5px 12px 5px 6px; border: 1px solid var(--border-strong); border-radius: 24px; cursor: pointer; background: transparent; font-family: inherit; font-size: 13px; color: var(--text-muted); transition: all .15s; white-space: nowrap; }
+.person-chip:hover { background: var(--surface-2); border-color: rgba(0,0,0,.22); color: var(--text); }
+.person-chip.active { background: var(--accent-pill); border-color: rgba(26,143,104,.35); color: var(--accent-pill-text); font-weight: 500; }
+.person-chip .chip-av { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; flex-shrink: 0; }
+.person-chip.active .chip-av { box-shadow: 0 0 0 2px rgba(26,143,104,.3); }
+
+/* ── My Tasks weekly dashboard ── */
+.mt-dashboard { padding: 1.25rem 2rem 2rem; display: flex; flex-direction: column; gap: 1.5rem; }
+.mt-summary-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.mt-stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: .875rem 1rem; position: relative; overflow: hidden; }
+.mt-stat-accent { position: absolute; top: 0; left: 0; width: 3px; height: 100%; }
+.mt-stat-label { font-size: 10px; font-weight: 600; color: var(--text-hint); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 5px; }
+.mt-stat-value { font-size: 22px; font-weight: 600; letter-spacing: -.03em; line-height: 1; }
+.mt-stat-sub { font-size: 11px; color: var(--text-hint); margin-top: 3px; }
+.mt-overdue-banner { background: #fff5f5; border: 1px solid #fecaca; border-radius: var(--radius-sm); padding: .75rem 1.125rem; display: flex; align-items: center; gap: 10px; font-size: 13px; color: #b84040; font-weight: 500; }
+.mt-overdue-banner .ov-count { font-size: 18px; font-weight: 700; }
+.mt-blocks { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.mt-block { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm); }
+.mt-block-full { grid-column: 1 / -1; }
+.mt-block-header { display: flex; align-items: center; justify-content: space-between; padding: .875rem 1.125rem; border-bottom: 1px solid var(--border); background: var(--surface-2); }
+.mt-block-title { display: flex; align-items: center; gap: 8px; }
+.mt-block-icon { font-size: 14px; }
+.mt-block-name { font-size: 13px; font-weight: 600; color: var(--text); letter-spacing: -.01em; }
+.mt-block-desc { font-size: 11px; color: var(--text-hint); }
+.mt-block-count { font-size: 11px; font-weight: 600; background: var(--bg); border: 1px solid var(--border); border-radius: 20px; padding: 1px 8px; color: var(--text-muted); }
+.mt-row { display: flex; align-items: center; gap: 10px; padding: 9px 1.125rem; border-bottom: 1px solid var(--border); transition: background .1s; }
+.mt-row:last-child { border-bottom: none; }
+.mt-row:hover { background: var(--surface-2); }
+.mt-row-left { flex: 1; min-width: 0; display: flex; align-items: center; gap: 9px; }
+.mt-row-proj { flex-shrink: 0; }
+.mt-row-task { font-size: 13px; color: var(--text); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mt-row-task.struck { color: var(--text-hint); text-decoration: line-through; }
+.mt-row-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.mt-row-date { font-size: 11px; font-weight: 500; color: var(--text-hint); white-space: nowrap; }
+.mt-row-date.overdue { color: #b84040; }
+.mt-pct-ring { width: 34px; height: 34px; flex-shrink: 0; }
+.mt-empty { padding: 1.5rem; text-align: center; font-size: 12px; color: var(--text-hint); }
+.mt-add { display: flex; align-items: center; gap: 6px; padding: 8px 1.125rem; font-size: 12px; color: var(--text-hint); cursor: pointer; border-top: 1px dashed var(--border); transition: all .1s; }
+.mt-add:hover { color: var(--accent); background: var(--surface-2); }
+/* inline edits inside mt-row */
+.mt-tname-edit { font-size: 13px; flex: 1; border: none; outline: none; background: transparent; color: var(--text); padding: 0; font-family: inherit; min-width: 0; }
+.mt-tname-edit:focus { background: var(--bg); border-radius: 4px; padding: 2px 6px; outline: 2px solid var(--accent); outline-offset: 1px; }
+.mt-tname-edit.struck { color: var(--text-hint); text-decoration: line-through; }
+.tname-edit{font-size:13px;flex:1;border:none;outline:none;background:transparent;color:var(--text);padding:0;font-family:inherit;min-width:0;}
+.tname-edit:focus{background:var(--surface-2);border-radius:4px;padding:2px 6px;outline:2px solid var(--accent);outline-offset:1px;}
+.tname-edit.struck{color:var(--text-hint);text-decoration:line-through;}
+.ipct-wrap{position:relative;display:inline-block;}
+.ipct-btn{display:flex;align-items:center;gap:6px;cursor:pointer;padding:3px 5px;border-radius:5px;transition:background .1s;}
+.ipct-btn:hover{background:var(--surface-2);}
+.ipct-popup{display:none;position:absolute;top:calc(100% + 5px);left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--radius-sm);padding:12px 14px;z-index:150;box-shadow:var(--shadow-lg);width:190px;}
+.ipct-popup.open{display:block;}
+.ipct-popup input[type=range]{width:100%;accent-color:var(--accent);margin-bottom:6px;}
+.ipct-val{font-size:12px;font-weight:600;text-align:center;color:var(--text);}
+.idate-input{font-size:11px;font-weight:500;border:none;background:transparent;color:var(--text-muted);cursor:pointer;padding:0;font-family:inherit;width:100px;}
+.idate-input:focus{outline:2px solid var(--accent);border-radius:4px;padding:2px 5px;background:var(--surface-2);}
+.idate-input.overdue{color:#b84040;}
+.iproj-wrap{position:relative;}
+.iproj-btn{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:500;padding:2px 8px;border-radius:20px;background:var(--accent-pill);color:var(--accent-pill-text);cursor:pointer;border:none;font-family:inherit;transition:opacity .15s;}
+.iproj-btn:hover{opacity:.75;}
+.iproj-none{font-size:11px;color:var(--text-hint);cursor:pointer;padding:2px 6px;border-radius:4px;border:1px dashed var(--border-strong);transition:all .15s;}
+.iproj-none:hover{background:var(--surface-2);color:var(--accent);border-color:rgba(26,143,104,.3);}
+.iproj-dd{display:none;position:absolute;top:calc(100% + 4px);left:0;background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--radius-sm);z-index:150;overflow:hidden;box-shadow:var(--shadow-lg);min-width:170px;max-height:200px;overflow-y:auto;}
+.iproj-dd.open{display:block;}
+.iproj-opt{padding:8px 12px;font-size:13px;cursor:pointer;transition:background .1s;display:flex;align-items:center;gap:7px;}
+.iproj-opt:hover{background:var(--surface-2);}
+.iproj-opt.cur{background:var(--accent-pill);color:var(--accent-pill-text);font-weight:500;}
+
+/* ── Empty / loading ── */
+.empty{text-align:center;padding:4rem 2rem;color:var(--text-hint);}
+.empty p{font-size:14px;margin-top:8px;}
+.loading{text-align:center;padding:3rem;color:var(--text-hint);font-size:13px;}
+
+/* ── Modal ── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(3px);}
+.overlay.open{display:flex;}
+.modal{background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);padding:1.75rem;width:100%;max-width:460px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg);}
+.modal-title{font-size:16px;font-weight:600;margin-bottom:1.5rem;color:var(--text);letter-spacing:-.02em;}
+.fg{margin-bottom:1rem;}
+.flabel{font-size:11px;font-weight:600;color:var(--text-hint);margin-bottom:5px;display:block;text-transform:uppercase;letter-spacing:.06em;}
+.fc{width:100%;font-size:13px;padding:8px 11px;border:1px solid var(--border-strong);border-radius:var(--radius-xs);background:var(--surface);color:var(--text);font-family:inherit;transition:border-color .15s;}
+.fc:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-light);}
+textarea.fc{resize:vertical;min-height:68px;}
+.cb-wrap{position:relative;}
+.cb-input{width:100%;font-size:13px;padding:8px 28px 8px 11px;border:1px solid var(--border-strong);border-radius:var(--radius-xs);background:var(--surface);color:var(--text);font-family:inherit;}
+.cb-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-light);}
+.cb-arrow{position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-hint);font-size:9px;}
+.cb-dd{display:none;position:absolute;top:calc(100% + 3px);left:0;right:0;background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--radius-sm);z-index:300;overflow:hidden;box-shadow:var(--shadow-lg);max-height:220px;overflow-y:auto;}
+.cb-dd.open{display:block;}
+.cb-opt{padding:9px 12px;font-size:13px;cursor:pointer;color:var(--text);display:flex;align-items:center;gap:9px;transition:background .1s;}
+.cb-opt:hover{background:var(--surface-2);}
+.cb-opt.sel{background:var(--accent-pill);color:var(--accent-pill-text);}
+.pdot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.cb-sec{font-size:10px;font-weight:600;color:var(--text-hint);padding:8px 12px 4px;text-transform:uppercase;letter-spacing:.08em;border-top:1px solid var(--border);}
+.cb-sec:first-child{border-top:none;}
+.pct-row{display:flex;align-items:center;gap:10px;}
+.pct-row input[type=range]{flex:1;accent-color:var(--accent);}
+.pct-lbl{font-size:13px;font-weight:600;min-width:36px;color:var(--text);}
+.mfooter{display:flex;justify-content:space-between;align-items:center;margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid var(--border);}
+.mfooter-r{display:flex;gap:8px;}
+
+/* ── Search ── */
+.search-wrap { position: relative; }
+.search-input { font-size: 13px; padding: 7px 14px 7px 34px; border: 1px solid rgba(255,255,255,.12); border-radius: 20px; background: rgba(255,255,255,.07); color: rgba(255,255,255,.85); width: 220px; font-family: inherit; transition: all .2s; }
+.search-input::placeholder { color: rgba(255,255,255,.3); }
+.search-input:focus { outline: none; background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.25); width: 280px; }
+.search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); font-size: 13px; color: rgba(255,255,255,.3); pointer-events: none; }
+.search-clear { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 12px; color: rgba(255,255,255,.4); cursor: pointer; display: none; background: none; border: none; padding: 0; line-height: 1; }
+.search-clear.show { display: block; }
+/* Search results overlay */
+.search-results { display: none; position: absolute; top: calc(100% + 8px); right: 0; width: 420px; background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius); box-shadow: var(--shadow-lg); z-index: 300; overflow: hidden; max-height: 70vh; overflow-y: auto; }
+.search-results.open { display: block; }
+.search-results-header { padding: 10px 14px; font-size: 11px; font-weight: 600; color: var(--text-hint); text-transform: uppercase; letter-spacing: .06em; border-bottom: 1px solid var(--border); background: var(--surface-2); }
+.search-result-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 14px; cursor: pointer; border-bottom: 1px solid var(--border); transition: background .1s; }
+.search-result-item:last-child { border-bottom: none; }
+.search-result-item:hover { background: var(--surface-2); }
+.search-result-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+.search-result-main { flex: 1; min-width: 0; }
+.search-result-title { font-size: 13px; font-weight: 500; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.search-result-title mark { background: #fff3b0; color: var(--text); border-radius: 2px; padding: 0 1px; }
+.search-result-sub { font-size: 11px; color: var(--text-hint); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.search-result-badge { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 20px; flex-shrink: 0; margin-top: 2px; }
+.search-empty { padding: 2rem; text-align: center; font-size: 13px; color: var(--text-hint); }
+
+/* ── Calendar ── */
+.cal-outer{display:flex;height:100%;overflow:hidden;}
+.cal-main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;}
+.cal-header{display:flex;align-items:center;gap:10px;padding:.75rem 1.5rem;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;}
+.cal-nav{display:flex;align-items:center;gap:5px;}
+.cal-nav-btn{width:28px;height:28px;border:1px solid var(--border-strong);border-radius:var(--radius-xs);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--text-muted);transition:all .15s;}
+.cal-nav-btn:hover{background:var(--surface-2);color:var(--text);}
+.cal-title{font-size:15px;font-weight:600;color:var(--text);min-width:120px;letter-spacing:-.01em;}
+.cal-today-btn{font-size:12px;padding:4px 10px;border:1px solid var(--border-strong);border-radius:var(--radius-xs);background:transparent;cursor:pointer;color:var(--text-muted);font-family:inherit;transition:all .15s;}
+.cal-today-btn:hover{background:var(--surface-2);color:var(--text);}
+.cal-view-toggle{display:flex;border:1px solid var(--border-strong);border-radius:var(--radius-xs);overflow:hidden;margin-left:auto;}
+.cal-view-btn{font-size:12px;font-weight:500;padding:5px 14px;border:none;background:transparent;cursor:pointer;color:var(--text-muted);font-family:inherit;transition:all .15s;}
+.cal-view-btn.active{background:var(--text);color:#fff;}
+.cal-body{flex:1;overflow:auto;display:flex;flex-direction:column;padding:.75rem 1.5rem 1rem;}
+.cal-grid-header{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:4px;}
+.cal-grid-header span{text-align:center;font-size:11px;font-weight:600;color:var(--text-hint);padding:4px 0;text-transform:uppercase;letter-spacing:.05em;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;flex:1;}
+.cal-cell{min-height:90px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-xs);padding:5px;cursor:pointer;transition:all .15s;overflow:hidden;display:flex;flex-direction:column;}
+.cal-cell:hover{border-color:var(--accent);background:rgba(26,143,104,.04);}
+.cal-cell.other-month{background:var(--surface-2);opacity:.5;}
+.cal-cell.today{border-color:var(--accent);border-width:2px;}
+.cal-cell.today .cal-day-num{background:var(--accent);color:#fff;border-radius:50%;}
+.cal-cell.selected{border-color:var(--accent);background:rgba(26,143,104,.07);box-shadow:0 0 0 2px rgba(26,143,104,.15);}
+.cal-day-num{font-size:12px;font-weight:600;color:var(--text-muted);width:22px;height:22px;display:flex;align-items:center;justify-content:center;margin-bottom:3px;flex-shrink:0;}
+.cal-event{font-size:10px;font-weight:500;padding:2px 5px;border-radius:3px;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.4;}
+.cal-more{font-size:10px;color:var(--text-hint);padding:1px 3px;margin-top:auto;}
+/* Week */
+.cal-week-header{display:grid;grid-template-columns:48px repeat(7,1fr);border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0;}
+.cal-week-day-hdr{text-align:center;padding:7px 4px;border-left:1px solid var(--border);cursor:pointer;transition:background .15s;}
+.cal-week-day-hdr:hover{background:var(--surface-2);}
+.cal-week-day-hdr.selected{background:rgba(26,143,104,.07);}
+.cal-week-day-hdr.today .wdate{color:var(--accent);font-weight:700;}
+.wday{font-size:10px;font-weight:600;color:var(--text-hint);text-transform:uppercase;letter-spacing:.05em;}
+.wdate{font-size:18px;font-weight:600;color:var(--text-muted);line-height:1.2;}
+.cal-allday-row{display:grid;grid-template-columns:48px repeat(7,1fr);border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0;}
+.cal-allday-label{font-size:9px;color:var(--text-hint);padding:6px 4px;text-align:right;border-right:1px solid var(--border);}
+.cal-allday-cell{border-left:1px solid var(--border);padding:3px;min-height:26px;cursor:pointer;transition:background .15s;}
+.cal-allday-cell:hover,.cal-allday-cell.selected{background:rgba(26,143,104,.07);}
+.cal-week-body{flex:1;overflow:auto;display:grid;grid-template-columns:48px repeat(7,1fr);}
+.cal-time-col{border-right:1px solid var(--border);}
+.cal-time-slot{height:44px;padding:2px 5px 0;font-size:10px;color:var(--text-hint);border-bottom:1px solid var(--border);text-align:right;}
+.cal-week-col{border-left:1px solid var(--border);cursor:pointer;transition:background .15s;}
+.cal-week-col:hover,.cal-week-col.selected{background:rgba(26,143,104,.05);}
+.cal-week-hour{height:44px;border-bottom:1px solid var(--border);}
+/* Side panel */
+.cal-panel{width:290px;flex-shrink:0;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+.cal-panel-hdr{padding:1rem 1.125rem .75rem;border-bottom:1px solid var(--border);flex-shrink:0;}
+.cal-panel-date{font-size:15px;font-weight:600;color:var(--text);}
+.cal-panel-day{font-size:11px;color:var(--text-hint);margin-top:2px;}
+.cal-panel-events{flex:1;overflow-y:auto;}
+.cal-panel-empty{padding:2rem 1rem;text-align:center;font-size:12px;color:var(--text-hint);}
+.cal-panel-item{display:flex;align-items:flex-start;gap:9px;padding:.625rem 1.125rem;cursor:pointer;transition:background .1s;border-bottom:1px solid var(--border);}
+.cal-panel-item:last-child{border-bottom:none;}
+.cal-panel-item:hover{background:var(--surface-2);}
+.cal-panel-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;margin-top:3px;}
+.cal-panel-info{flex:1;min-width:0;}
+.cal-panel-title{font-size:13px;font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.cal-panel-meta{font-size:11px;color:var(--text-hint);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.cal-panel-edit{font-size:11px;padding:2px 7px;border:1px solid var(--border-strong);border-radius:var(--radius-xs);background:transparent;cursor:pointer;color:var(--text-muted);flex-shrink:0;transition:all .15s;font-family:inherit;}
+.cal-panel-edit:hover{background:var(--accent-pill);color:var(--accent-pill-text);border-color:rgba(26,143,104,.3);}
+.cal-panel-form{padding:.875rem 1.125rem;border-top:2px solid var(--border);flex-shrink:0;background:var(--surface-2);}
+.cal-panel-form-title{font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:.625rem;text-transform:uppercase;letter-spacing:.05em;}
+.cpf-input{width:100%;font-size:13px;padding:7px 9px;border:1px solid var(--border-strong);border-radius:var(--radius-xs);background:var(--surface);color:var(--text);font-family:inherit;margin-bottom:6px;}
+.cpf-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-light);}
+.cpf-row{display:flex;gap:6px;margin-bottom:6px;}
+.cpf-row .cpf-input{margin-bottom:0;}
+/* Event colours */
+.ev-deadline{background:#fee2e2;color:#b91c1c;}
+.ev-start{background:#dcfce7;color:#166534;}
+.ev-submit{background:#fef9c3;color:#854d0e;}
+.ev-milestone{background:#ede9fe;color:#5b21b6;}
+.ev-meeting{background:#dbeafe;color:#1e40af;}
+.ev-other{background:#f3f4f6;color:#374151;}
+.dot-deadline{background:#b91c1c;}.dot-start{background:#166534;}
+.dot-submit{background:#854d0e;}.dot-milestone{background:#5b21b6;}
+.dot-meeting{background:#1e40af;}.dot-other{background:#374151;}
+/* ── Toast ── */
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--sb-bg);color:rgba(255,255,255,.9);font-size:12px;font-weight:500;padding:10px 16px;border-radius:var(--radius-sm);z-index:999;opacity:0;transform:translateY(8px);transition:all .25s;pointer-events:none;box-shadow:var(--shadow-lg);border:1px solid rgba(255,255,255,.08);}
+.toast.show{opacity:1;transform:translateY(0);}
+
+@media(max-width:700px){
+  .sidebar{display:none;}
+  .stats{grid-template-columns:repeat(2,1fr);}
+  .c-header,.toolbar,.list-wrap,.kanban{padding-left:1rem;padding-right:1rem;}
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="brand">
+    <div>
+      <div class="brand-name">黃琮福建築師事務所 工作進度追蹤管理</div>
+      <div class="brand-sub">HUANG TSUNG-FU ARCHITECTS — Task Tracking System</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="search-wrap" id="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input class="search-input" id="search-input" type="text" placeholder="搜尋案名、任務、人員..."
+        oninput="onSearchInput()" onfocus="onSearchFocus()" autocomplete="off">
+      <button class="search-clear" id="search-clear" onclick="clearSearch()">✕</button>
+      <div class="search-results" id="search-results"></div>
+    </div>
+    <div class="sync-status">
+      <div class="sync-dot" id="sync-dot"></div>
+      <span id="sync-text">連線中...</span>
+    </div>
+    <button class="btn btn-primary" onclick="openModal()">＋ 新增進度</button>
+  </div>
+</header>
+
+<div class="app">
+  <nav class="sidebar">
+    <div class="sb-label">視圖</div>
+    <button class="sb-btn active" onclick="switchNav('project',this)"><span class="sb-icon">⊞</span>專案總覽</button>
+    <button class="sb-btn" onclick="switchNav('mytasks',this)"><span class="sb-icon">☑</span>我的任務</button>
+    <button class="sb-btn" onclick="switchNav('calendar',this)"><span class="sb-icon">📅</span>行事曆</button>
+    <button class="sb-btn" onclick="switchNav('members',this)"><span class="sb-icon">👥</span>人員管理</button>
+    <div class="sb-divider"></div>
+    <div class="sb-label">資料夾</div>
+    <div id="sb-folders"></div>
+    <button class="sb-btn" onclick="createFolder()" style="margin:.25rem .5rem;font-size:11px;color:rgba(255,255,255,.35)"><span class="sb-icon">＋</span>新增資料夾</button>
+    <div class="sb-divider"></div>
+    <div class="sb-label">人員</div>
+    <div id="sb-persons"></div>
+  </nav>
+
+  <div class="content">
+
+    <!-- ── 專案總覽 ── -->
+    <div id="view-project">
+      <div class="c-header">
+        <div class="c-title">專案總覽</div>
+        <div class="c-tabs">
+          <button class="ctab active" onclick="switchCtab('kanban',this)">看板</button>
+          <button class="ctab" onclick="switchCtab('list',this)">清單</button>
+        </div>
+      </div>
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <select id="fp" onchange="renderProject()"><option value="">所有人員</option></select>
+          <select id="fs" onchange="renderProject()">
+            <option value="">所有狀態</option>
+            <option>進行中</option><option>審核中</option><option>完成</option><option>待辦</option>
+          </select>
+          <select id="fpr" onchange="renderProject()"><option value="">所有專案</option></select>
+        </div>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="stat-label">進行中專案</div><div class="stat-value" id="s-proj">—</div><div class="stat-sub">個專案</div></div>
+        <div class="stat"><div class="stat-label">工作項目</div><div class="stat-value" id="s-task">—</div><div class="stat-sub">個任務</div></div>
+        <div class="stat"><div class="stat-label">平均完成度</div><div class="stat-value" id="s-avg">—</div><div class="stat-sub">整體進度</div></div>
+        <div class="stat"><div class="stat-label">本週到期</div><div class="stat-value" id="s-due">—</div><div class="stat-sub">個項目</div></div>
+      </div>
+      <div id="pv-kanban">
+        <div class="loading" id="loading-msg">載入資料中...</div>
+        <div id="kanban-grid"></div>
+      </div>
+      <div id="pv-list" style="display:none">
+        <div class="list-wrap" id="proj-list"></div>
+      </div>
+    </div>
+
+    <!-- ── 我的任務 ── -->
+    <div id="view-mytasks" style="display:none">
+      <div class="c-header">
+        <div class="c-title" id="mt-title">我的任務</div>
+        <div class="c-tabs"><button class="ctab active">清單</button></div>
+      </div>
+      <div class="mt-person-bar" id="mt-person-bar">
+        <!-- populated by syncFilters -->
+      </div>
+      <select id="mt-person" style="display:none" onchange="renderMyTasks()"><option value="">選擇人員...</option></select>
+      <div class="list-wrap" id="mt-wrap"></div>
+    </div>
+
+    <!-- ── 人員視圖 ── -->
+    <div id="view-member" style="display:none">
+      <div class="c-header">
+        <div class="c-title" id="mem-title">人員視圖</div>
+      </div>
+      <div class="list-wrap" id="mem-wrap"></div>
+    </div>
+
+    <!-- ── 行事曆 ── -->
+    <div id="view-calendar" style="display:none;height:100%;overflow:hidden">
+      <div class="cal-outer">
+        <div class="cal-main">
+          <div class="cal-header">
+            <div class="cal-nav">
+              <button class="cal-nav-btn" onclick="calNav(-1)">‹</button>
+              <button class="cal-today-btn" onclick="calGoToday()">今天</button>
+              <button class="cal-nav-btn" onclick="calNav(1)">›</button>
+            </div>
+            <div class="cal-title" id="cal-title"></div>
+            <div class="cal-view-toggle">
+              <button class="cal-view-btn active" onclick="setCalView('month',this)">月</button>
+              <button class="cal-view-btn" onclick="setCalView('week',this)">週</button>
+            </div>
+          </div>
+          <div class="cal-body" id="cal-body"></div>
+        </div>
+        <!-- Side panel -->
+        <div class="cal-panel" id="cal-panel">
+          <div class="cal-panel-hdr">
+            <div class="cal-panel-date" id="cal-panel-date">選擇日期</div>
+            <div class="cal-panel-day" id="cal-panel-day">點擊日期查看事件</div>
+          </div>
+          <div class="cal-panel-events" id="cal-panel-events">
+            <div class="cal-panel-empty">← 點擊左側日期</div>
+          </div>
+          <!-- New event form (hidden by default) -->
+          <div class="cal-panel-form" id="cal-panel-form" style="display:none">
+            <div class="cal-panel-form-title" id="cal-form-title">新增事件</div>
+            <input class="cpf-input" type="text" id="cpf-title" placeholder="事件名稱（必填）">
+            <div class="cpf-row">
+              <select class="cpf-input" id="cpf-type">
+                <option value="deadline">截止日期</option>
+                <option value="start">開工期限</option>
+                <option value="submit">送件期限</option>
+                <option value="milestone">里程碑</option>
+                <option value="meeting">會議</option>
+                <option value="other">其他</option>
+              </select>
+              <input class="cpf-input" type="date" id="cpf-date">
+            </div>
+            <select class="cpf-input" id="cpf-project"><option value="">不關聯專案</option></select>
+            <input class="cpf-input" type="text" id="cpf-note" placeholder="備註（選填）">
+            <div style="display:flex;gap:6px;margin-top:4px">
+              <button class="btn btn-danger" id="cpf-delete" onclick="deleteCalEvent()" style="display:none">刪除</button>
+              <button class="btn" onclick="hideCalForm()" style="flex:1">取消</button>
+              <button class="btn btn-primary" onclick="saveCalEvent()" style="flex:1">儲存</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 人員管理 ── -->
+    <div id="view-members" style="display:none">
+      <div class="c-header">
+        <div class="c-title">人員管理</div>
+      </div>
+      <div class="mgmt-wrap" id="members-wrap"></div>
+    </div>
+
+    <!-- ── 專案詳情 ── -->
+    <div id="view-pdetail" style="display:none">
+      <div class="c-header">
+        <div class="pd-breadcrumb">
+          <button class="pd-back" onclick="switchNav('project',null)">← 專案總覽</button>
+          <span class="pd-sep">/</span>
+          <span class="pd-current" id="pd-title">—</span>
+        </div>
+        <div class="pd-actions">
+          <span class="badge" id="pd-badge" style="font-size:12px;padding:3px 10px"></span>
+          <button class="btn btn-primary" id="pd-add-btn">＋ 新增任務</button>
+        </div>
+      </div>
+      <div class="pd-stats" id="pd-stats"></div>
+      <div class="list-wrap" id="pd-wrap"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="overlay" id="overlay" onclick="handleOverlayClick(event)">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">新增工作進度</div>
+    <div class="fg">
+      <label class="flabel">案名 / 專案名稱</label>
+      <select class="fc" id="f-project" onchange="handleProjectChange()"><option value="__new__">＋ 新增專案...</option></select>
+    </div>
+    <div class="fg" id="new-proj-g" style="display:none">
+      <label class="flabel">新專案名稱</label>
+      <input class="fc" type="text" id="f-new-proj" placeholder="請輸入專案名稱">
+    </div>
+    <div class="fg">
+      <label class="flabel">工作項目描述 <span style="color:var(--text-hint);font-weight:400">（可選取或自行輸入）</span></label>
+      <div class="cb-wrap" id="cb-wrap">
+        <input class="cb-input" type="text" id="f-task" placeholder="選取階段或自行輸入..." autocomplete="off">
+        <span class="cb-arrow">▾</span>
+        <div class="cb-dd" id="cb-dd">
+          <div class="cb-sec">建築專案生命週期</div>
+          <div class="cb-opt" data-v="評估中" data-p="10" onclick="selectTask(this)"><span class="pdot" style="background:#9FE1CB"></span>評估中（可行性評估與初步規劃）</div>
+          <div class="cb-opt" data-v="概念草圖設計" data-p="20" onclick="selectTask(this)"><span class="pdot" style="background:#B5D4F4"></span>概念草圖設計（空間配置、繪製初步設計圖）</div>
+          <div class="cb-opt" data-v="已簽約" data-p="35" onclick="selectTask(this)"><span class="pdot" style="background:#AFA9EC"></span>已簽約（細部設計繪製與執照申請）</div>
+          <div class="cb-opt" data-v="建築執照掛件" data-p="50" onclick="selectTask(this)"><span class="pdot" style="background:#FAC775"></span>建築執照掛件</div>
+          <div class="cb-opt" data-v="建築執照已取得" data-p="60" onclick="selectTask(this)"><span class="pdot" style="background:#C0DD97"></span>建築執照已取得</div>
+          <div class="cb-opt" data-v="開工期限" data-p="70" onclick="selectTask(this)"><span class="pdot" style="background:#F5C4B3"></span>開工期限</div>
+          <div class="cb-opt" data-v="申請展期期限" data-p="75" onclick="selectTask(this)"><span class="pdot" style="background:#F09595"></span>申請展期期限</div>
+          <div class="cb-opt" data-v="建築期限" data-p="85" onclick="selectTask(this)"><span class="pdot" style="background:#ED93B1"></span>建築期限</div>
+          <div class="cb-opt" data-v="工程完竣_申請使用執照" data-p="100" onclick="selectTask(this)"><span class="pdot" style="background:#1D9E75"></span>工程完竣 — 申請使用執照</div>
+        </div>
+      </div>
+    </div>
+    <div class="fg">
+      <label class="flabel">完成百分比</label>
+      <div class="pct-row">
+        <input type="range" min="0" max="100" step="5" value="0" id="f-pct" oninput="document.getElementById('f-pct-lbl').textContent=this.value+'%'">
+        <span class="pct-lbl" id="f-pct-lbl">0%</span>
+      </div>
+    </div>
+    <div class="fg">
+      <label class="flabel">負責人</label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <select class="fc" id="f-person" style="flex:1"><option value="__new__">＋ 新增人員...</option></select>
+        <button class="btn" style="white-space:nowrap;flex-shrink:0;font-size:12px" onclick="showAddPersonInput()" type="button">＋ 新人員</button>
+      </div>
+    </div>
+    <div class="fg" id="new-person-g" style="display:none">
+      <label class="flabel">新人員姓名</label>
+      <input class="fc" type="text" id="f-new-person" placeholder="請輸入姓名（儲存後加入）">
+    </div>
+    <div class="fg">
+      <label class="flabel">預計完成日期</label>
+      <input class="fc" type="date" id="f-date">
+    </div>
+    <div class="fg">
+      <label class="flabel">備註留言</label>
+      <textarea class="fc" id="f-note" placeholder="補充說明、待確認事項..."></textarea>
+    </div>
+    <div class="mfooter">
+      <button class="btn btn-danger" id="btn-delete" onclick="deleteTask()" style="display:none">刪除</button>
+      <div class="mfooter-r">
+        <button class="btn" onclick="closeModal()">取消</button>
+        <button class="btn btn-primary" onclick="saveTask()">儲存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Calendar popup removed — using side panel instead -->
+
+<div class="toast" id="toast"></div>
+
+<!-- Member Modal -->
+<div class="overlay" id="member-overlay" onclick="if(event.target===this)closeMemberModal()">
+  <div class="modal">
+    <div class="modal-title" id="member-modal-title">新增人員</div>
+    <div class="member-modal-av-row">
+      <div class="member-modal-av-preview" id="member-av-preview">?</div>
+      <div style="font-size:12px;color:var(--text-hint)">頭像會根據姓名自動產生</div>
+    </div>
+    <div class="fg">
+      <label class="flabel">姓名</label>
+      <input class="fc" type="text" id="fm-name" placeholder="請輸入姓名" oninput="updateMemberAvPreview()">
+    </div>
+    <div class="fg">
+      <label class="flabel">職稱 / 角色</label>
+      <input class="fc" type="text" id="fm-role" placeholder="例：建築師、設計師、工程師">
+    </div>
+    <div class="fg">
+      <label class="flabel">備註</label>
+      <textarea class="fc" id="fm-note" placeholder="聯絡資訊或其他備註..." style="min-height:60px"></textarea>
+    </div>
+    <div class="mfooter">
+      <button class="btn btn-danger" id="fm-delete" onclick="deleteMember()" style="display:none">刪除人員</button>
+      <div class="mfooter-r">
+        <button class="btn" onclick="closeMemberModal()">取消</button>
+        <button class="btn btn-primary" onclick="saveMember()">儲存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const FB={apiKey:"AIzaSyDHiG0qDLqjFgyf40Qmr1CZah3uHMkgIVI",authDomain:"progress-tracking-9f010.firebaseapp.com",projectId:"progress-tracking-system-9f010",storageBucket:"progress-tracking-system-9f010.firebasestorage.app",messagingSenderId:"303666820708",appId:"1:303666820708:web:7b626e91e7e8b251899171"};
+let db,col,folderCol,memberCol,calCol,addDoc,updateDoc,deleteDoc,docFn,sts;
+let tasks=[],folders=[],members=[],calEvents=[],editId=null,editMemberId=null,editCalId=null;
+let nav='project',ctab='kanban',curMember=null,apScopes={},collapsed={},folderViews={};
+let calView='month',calYear=new Date().getFullYear(),calMonth=new Date().getMonth(),calWeekStart=null;
+const AVCS=['av-a','av-b','av-c','av-d','av-e','av-f','av-g','av-h'];
+const avMap={};let avIdx=0;
+function gav(n){if(!avMap[n]){avMap[n]=AVCS[avIdx++%AVCS.length];}return avMap[n];}
+function ini(n){return n?n.slice(0,1):'?';}
+function sc(s){return{完成:'b-done','審核中':'b-review','進行中':'b-ongoing','待辦':'b-pending'}[s]||'b-pending';}
+function cs(p){return p===100?'完成':p>=60?'審核中':p>0?'進行中':'待辦';}
+function ov(d){return d&&new Date(d)<new Date();}
+function toast(m){const e=document.getElementById('toast');e.textContent=m;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),2200);}
+function $id(i){return document.getElementById(i);}
+
+(async()=>{
+  const {initializeApp}=await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js");
+  const fs=await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+  db=fs.getFirestore(initializeApp(FB));
+  col=fs.collection(db,'tasks');
+  folderCol=fs.collection(db,'folders');
+  memberCol=fs.collection(db,'members');
+  calCol=fs.collection(db,'calEvents');
+  addDoc=fs.addDoc;updateDoc=fs.updateDoc;deleteDoc=fs.deleteDoc;docFn=fs.doc;sts=fs.serverTimestamp;
+  fs.onSnapshot(col,snap=>{
+    tasks=snap.docs.map(d=>({id:d.id,...d.data()}));
+    $id('sync-dot').className='sync-dot live';$id('sync-text').textContent='即時同步';
+    $id('loading-msg').style.display='none';
+    syncFilters();renderAll();
+  },e=>{$id('sync-text').textContent='連線失敗';console.error(e);});
+  fs.onSnapshot(folderCol,snap=>{
+    folders=snap.docs.map(d=>({id:d.id,...d.data()}));
+    syncSidebarFolders();
+    if(!$id('overlay').classList.contains('open')) rebuildProjectSelect(projects());
+    if(nav==='project') renderProject();
+  },e=>console.error(e));
+  fs.onSnapshot(memberCol,snap=>{
+    members=snap.docs.map(d=>({id:d.id,...d.data()}));
+    syncFilters();
+    if(nav==='members') renderMembersPage();
+  },e=>console.error(e));
+  fs.onSnapshot(calCol,snap=>{
+    calEvents=snap.docs.map(d=>({id:d.id,...d.data()}));
+    if(nav==='calendar') renderCalendar();
+  },e=>console.error(e));
+})();
+
+// persons() merges members collection with task assignees for backward compat
+function persons(){
+  const fromMembers=members.map(m=>m.name).filter(Boolean);
+  const fromTasks=[...new Set(tasks.map(t=>t.assignee).filter(Boolean))];
+  return [...new Set([...fromMembers,...fromTasks])].sort();
+}
+function projects(){return[...new Set(tasks.map(t=>t.project).filter(Boolean))].sort();}
+
+function rebuildProjectSelect(prs){
+  const sel=$id('f-project');
+  const curVal=sel.value;
+  sel.innerHTML=''; // clear
+
+  // Group projects by folder
+  const folderProjects={};
+  folders.forEach(f=>{ folderProjects[f.id]=(f.projects||[]).filter(p=>prs.includes(p)); });
+  const inAnyFolder=new Set(folders.flatMap(f=>f.projects||[]));
+  const uncat=prs.filter(p=>!inAnyFolder.has(p));
+
+  // Add folder groups
+  folders.forEach(f=>{
+    const fps=folderProjects[f.id];
+    if(!fps.length) return;
+    const grp=document.createElement('optgroup');
+    grp.label='📁 '+f.name;
+    fps.forEach(p=>{ const o=new Option(p,p); grp.appendChild(o); });
+    sel.appendChild(grp);
+  });
+
+  // Add uncategorised
+  if(uncat.length){
+    if(folders.length){
+      const grp=document.createElement('optgroup');
+      grp.label='未分類';
+      uncat.forEach(p=>{ grp.appendChild(new Option(p,p)); });
+      sel.appendChild(grp);
+    } else {
+      uncat.forEach(p=>{ sel.appendChild(new Option(p,p)); });
+    }
+  }
+
+  // Add new project option
+  sel.appendChild(new Option('＋ 新增專案...','__new__'));
+
+  // Restore selection
+  if(curVal&&[...sel.options].some(o=>o.value===curVal)) sel.value=curVal;
+}
+
+function syncFilters(){
+  const ps=persons(),prs=projects();
+  // toolbar
+  const setOpts=(id,prefix,arr)=>{const el=$id(id),v=el.value;el.innerHTML=prefix+arr.map(x=>`<option>${x}</option>`).join('');if(v)el.value=v;};
+  setOpts('fp','<option value="">所有人員</option>',ps);
+  setOpts('fpr','<option value="">所有專案</option>',prs);
+  setOpts('mt-person','<option value="">選擇人員...</option>',ps); // keep hidden select for compat
+
+  // Person chip bar
+  const bar=$id('mt-person-bar');
+  if(bar){
+    const curPerson=$id('mt-person').value;
+    bar.innerHTML=`<span class="mt-person-bar-label">人員</span>`
+      + ps.map(p=>`
+        <button class="person-chip ${curPerson===p?'active':''}" onclick="selectMtPerson('${p}')">
+          <span class="chip-av ${gav(p)}">${ini(p)}</span>
+          ${p}
+        </button>`).join('');
+  }
+  // modal selects — only rebuild when modal is closed to avoid disrupting active selection
+  const modalOpen=$id('overlay').classList.contains('open');
+  if(!modalOpen){
+    setOpts('f-person',ps.map(x=>`<option>${x}</option>`).join('')+'<option value="__new__">＋ 新增人員...</option>',[]);
+    rebuildProjectSelect(prs);
+  } else {
+    // Just ensure new persons/projects appear without resetting current selection
+    const fper=$id('f-person'),fproj=$id('f-project');
+    ps.forEach(p=>{if(![...fper.options].some(o=>o.value===p)){fper.add(new Option(p,p),fper.options.length-1);}});
+    prs.forEach(p=>{if(![...fproj.options].some(o=>o.value===p)){
+      // insert before __new__ option
+      const newOpt=$id('f-project').querySelector('option[value="__new__"]');
+      fproj.insertBefore(new Option(p,p),newOpt);
+    }});
+  }
+  // sidebar persons
+  $id('sb-persons').innerHTML=ps.map(p=>`<button class="sb-btn ${curMember===p?'active':''}" onclick="switchMember('${p}',this)"><span class="sb-av ${gav(p)}">${ini(p)}</span>${p}</button>`).join('');
+}
+
+function renderAll(){
+  if(nav==='project')renderProject();
+  else if(nav==='mytasks')renderMyTasks();
+  else if(nav==='member')renderMember();
+  else if(nav==='pdetail')renderPDetail();
+  else if(nav==='members')renderMembersPage();
+  else if(nav==='calendar')renderCalendar();
+}
+
+// ── Nav ──
+window.switchNav=function(n,el){
+  nav=n;curMember=null;
+  document.querySelectorAll('.sb-btn').forEach(e=>e.classList.remove('active'));
+  if(el)el.classList.add('active');
+  ['project','mytasks','member','pdetail','members','calendar'].forEach(v=>$id('view-'+v).style.display=v===n?'':'none');
+  renderAll();
+};
+window.switchMember=function(name,el){
+  curMember=name;nav='member';
+  document.querySelectorAll('.sb-btn').forEach(e=>e.classList.remove('active'));
+  if(el)el.classList.add('active');
+  $id('mem-title').textContent=name+' 的任務';
+  ['project','mytasks','member','pdetail','members','calendar'].forEach(v=>$id('view-'+v).style.display=v==='member'?'':'none');
+  renderMember();
+};
+window.switchCtab=function(t,el){
+  ctab=t;
+  document.querySelectorAll('.ctab').forEach(e=>e.classList.remove('active'));
+  el.classList.add('active');
+  $id('pv-kanban').style.display=t==='kanban'?'':'none';
+  $id('pv-list').style.display=t==='list'?'':'none';
+  renderProject();
+};
+
+// ── Filtered ──
+function filtered(){
+  const fp=$id('fp').value,fs=$id('fs').value,fpr=$id('fpr').value;
+  return tasks.filter(t=>(!fp||t.assignee===fp)&&(!fs||t.status===fs)&&(!fpr||t.project===fpr));
+}
+
+// ── Project view ──
+window.renderProject=function(){
+  const ft=filtered(),grps={};
+  ft.forEach(t=>{if(!grps[t.project])grps[t.project]=[];grps[t.project].push(t);});
+  const pjs=Object.keys(grps);
+  $id('s-proj').textContent=pjs.length;$id('s-task').textContent=ft.length;
+  const avg=ft.length?Math.round(ft.reduce((a,t)=>a+(t.pct||0),0)/ft.length):0;
+  $id('s-avg').textContent=avg+'%';
+  const now=new Date(),nw=new Date();nw.setDate(now.getDate()+7);
+  $id('s-due').textContent=ft.filter(t=>t.date&&new Date(t.date)>=now&&new Date(t.date)<=nw&&t.pct<100).length;
+  if(ctab==='kanban')renderKanban(pjs,grps);else renderProjList(pjs,grps);
+};
+
+function renderKanban(pjs,grps){
+  const grid=$id('kanban-grid');
+  if(!pjs.length){grid.innerHTML='<div class="empty"><p style="font-size:32px">📋</p><p>目前沒有工作項目，點右上角新增吧！</p></div>';return;}
+  const ps=persons();
+
+  function kCard(pn){
+    const ts=grps[pn];if(!ts)return'';
+    const asgns=[...new Set(ts.map(t=>t.assignee).filter(Boolean))];
+    const avg=Math.round(ts.reduce((a,t)=>a+(t.pct||0),0)/ts.length);
+    const nd=ts.filter(t=>t.date).sort((a,b)=>new Date(a.date)-new Date(b.date))[0];
+    const sid='ap_'+pn.replace(/[^\w]/g,'_').slice(0,20);
+    // folder badge for this project
+    const pFolder=folders.find(f=>f.projects&&f.projects.includes(pn));
+    return`<div class="k-card" onclick="openPDetail('${pn}')" style="cursor:pointer">
+      <div class="k-header">
+        <div class="k-name">${pn}</div>
+        <span class="badge ${sc(cs(avg))}">${cs(avg)}</span>
+      </div>
+      <div class="k-tasks">${ts.map(t=>`<div class="k-row" onclick="event.stopPropagation();openModal('${t.id}')"><div class="k-desc" title="${t.task||''}">${t.task||'（未命名）'}</div><div class="k-bar-wrap"><div class="k-bar-fill" style="width:${t.pct||0}%"></div></div><div class="k-pct">${t.pct||0}%</div></div>`).join('')}</div>
+      <div class="k-footer" onclick="event.stopPropagation()">
+        <div class="avatars">${asgns.map(a=>`<div class="av ${gav(a)}" title="${a}">${ini(a)}</div>`).join('')}</div>
+        <div style="display:flex;align-items:center;gap:6px">
+          ${nd?`<div class="due ${ov(nd.date)&&nd.pct<100?'overdue':''}">到期 ${nd.date}</div>`:''}
+          <div style="display:flex;gap:4px">
+            <div class="ap-wrap">
+              <button class="assign-btn" onclick="toggleAp(event,'${sid}')">指派 ▾</button>
+              <div class="ap" id="${sid}">
+                <div class="ap-scope"><button class="ap-scope-btn active" onclick="setScope(event,'${sid}','all')">全部任務</button><button class="ap-scope-btn" onclick="setScope(event,'${sid}','new')">僅未指派</button></div>
+                <div class="ap-head">選擇負責人</div>
+                ${ps.map(p=>`<div class="ap-person" onclick="doAssign(event,'${pn}','${p}','${sid}')"><span class="sb-av ${gav(p)}">${ini(p)}</span>${p}</div>`).join('')}
+                <div class="ap-person" style="color:var(--text-hint);font-size:12px" onclick="addPersonAssign(event,'${pn}','${sid}')">＋ 新增人員...</div>
+              </div>
+            </div>
+            <div class="ap-wrap">
+              <button class="k-card-folder-btn" onclick="toggleFolderPicker(event,'fpk_${pn.replace(/[^\w]/g,'_')}')">${pFolder?'📁 '+pFolder.name:'📂 移至'}</button>
+              <div class="ap" id="fpk_${pn.replace(/[^\w]/g,'_')}" style="min-width:150px">
+                <div class="ap-head">移至資料夾</div>
+                ${folders.map(f=>`<div class="ap-person ${pFolder&&pFolder.id===f.id?'cur':''}" onclick="assignToFolder(event,'${pn}','${f.id}','fpk_${pn.replace(/[^\w]/g,'_')}')">${pFolder&&pFolder.id===f.id?'✓ ':''}<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${f.color||'#999'};margin-right:5px"></span>${f.name}</div>`).join('')}
+                ${pFolder?`<div class="ap-person" style="color:var(--text-hint)" onclick="removeFromFolder(event,'${pn}','fpk_${pn.replace(/[^\w]/g,'_')}')">✕ 移出資料夾</div>`:''}
+                <div class="ap-person" style="color:var(--accent);font-size:12px" onclick="createFolderAndAdd(event,'${pn}')">＋ 新增資料夾</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  // Build sections: folders first, then uncategorised
+  const folderProjectSets=folders.map(f=>new Set(f.projects||[]));
+  const allFolderProjects=new Set(folders.flatMap(f=>f.projects||[]));
+  const uncatProjs=pjs.filter(pn=>!allFolderProjects.has(pn));
+
+  let html='<div class="kanban-section">';
+
+  // Render each folder
+  folders.forEach((f,fi)=>{
+    const fProjs=(f.projects||[]).filter(pn=>grps[pn]);
+    const isOpen=!collapsed['folder_'+f.id];
+    const fView=folderViews[f.id]||'kanban'; // 'kanban' or 'list'
+    html+=`<div class="folder-block">
+      <div class="folder-header" data-fid="${f.id}" onclick="toggleFolderCollapse('${f.id}',this)">
+        <span class="folder-icon">${isOpen?'📂':'📁'}</span>
+        <span class="folder-color" style="background:${f.color||'#888'}"></span>
+        <input class="folder-name-input" value="${f.name.replace(/"/g,'&quot;')}" data-fid="${f.id}" data-orig="${f.name.replace(/"/g,'&quot;')}" onclick="event.stopPropagation()">
+        <span class="folder-count">${fProjs.length} 個專案</span>
+        <div class="folder-actions" onclick="event.stopPropagation()">
+          <div class="fv-toggle">
+            <button class="fv-btn ${fView==='kanban'?'active':''}" title="看板" onclick="setFolderView(event,'${f.id}','kanban')">⊞</button>
+            <button class="fv-btn ${fView==='list'?'active':''}" title="清單" onclick="setFolderView(event,'${f.id}','list')">☰</button>
+          </div>
+          <button class="folder-action-btn" onclick="openFolderColorPicker('${f.id}')">🎨</button>
+          <button class="folder-action-btn danger" onclick="deleteFolder('${f.id}')">刪除</button>
+        </div>
+      </div>`;
+
+    if(isOpen){
+      if(fView==='kanban'){
+        html+=`<div class="folder-grid">`;
+        fProjs.forEach(pn=>{ html+=kCard(pn); });
+        html+=`</div>`;
+      } else {
+        // List view for folder — compact rows, no table
+        html+=`<div class="folder-list-wrap">
+          <div class="flist" style="margin-left:1.25rem;border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;background:var(--surface);width:calc(100% - 1.25rem)">
+            <div class="flist-head">
+              <span class="flist-name" style="font-size:10px">專案名稱</span>
+              <span class="flist-pct" style="font-size:10px">進度</span>
+              <span class="flist-persons" style="font-size:10px">負責人</span>
+              <span class="flist-date" style="font-size:10px">截止日</span>
+              <span class="flist-status" style="font-size:10px">狀態</span>
+            </div>
+            ${fProjs.map(pn=>{
+              const ts=grps[pn]||[];
+              const avg=ts.length?Math.round(ts.reduce((a,t)=>a+(t.pct||0),0)/ts.length):0;
+              const asgns=[...new Set(ts.map(t=>t.assignee).filter(Boolean))];
+              const nd=ts.filter(t=>t.date).sort((a,b)=>new Date(a.date)-new Date(b.date))[0];
+              const isOv=nd&&ov(nd.date)&&avg<100;
+              const dateStr=nd?(nd.date.slice(5).replace('-','/')):' — ';
+              return`<div class="flist-row" onclick="openPDetail('${pn}')">
+                <div class="flist-name">
+                  <div style="font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${pn}</div>
+                  <div style="font-size:10px;color:var(--text-hint)">${ts.length} 項</div>
+                </div>
+                <div class="flist-pct">
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <div style="flex:1;height:4px;border-radius:2px;background:var(--bg);overflow:hidden">
+                      <div style="width:${avg}%;height:100%;background:linear-gradient(90deg,var(--accent),#4ade9a);border-radius:2px"></div>
+                    </div>
+                    <span style="font-size:11px;font-weight:600;color:var(--text-muted);white-space:nowrap;width:32px;text-align:right">${avg}%</span>
+                  </div>
+                </div>
+                <div class="flist-persons">
+                  ${asgns.slice(0,3).map(a=>`<div class="av ${gav(a)}" style="width:20px;height:20px;font-size:8px;border:1.5px solid var(--surface);margin-left:-3px" title="${a}">${ini(a)}</div>`).join('')}
+                  ${asgns.length>3?`<div class="av" style="width:20px;height:20px;font-size:8px;background:var(--bg);color:var(--text-hint)">+${asgns.length-3}</div>`:''}
+                </div>
+                <div class="flist-date${isOv?' flist-overdue':''}">${dateStr}</div>
+                <div class="flist-status"><span class="badge ${sc(cs(avg))}" style="font-size:10px">${cs(avg)}</span></div>
+              </div>`;
+            }).join('')}
+          </div>
+          <div class="folder-drop-zone" style="margin-left:1.25rem" onclick="openAddProjectToFolder('${f.id}')">＋ 將現有專案加入此資料夾</div>
+        </div>`;
+      }
+      if(fView==='kanban'){
+        html+=`<div class="folder-drop-zone" onclick="openAddProjectToFolder('${f.id}')">＋ 將現有專案加入此資料夾</div>`;
+      }
+    }
+    html+=`</div>`;
+  });
+
+  // Uncategorised
+  if(uncatProjs.length){
+    if(folders.length) html+=`<div class="uncat-label">未分類專案</div>`;
+    html+=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:12px">`;
+    uncatProjs.forEach(pn=>{ html+=kCard(pn); });
+    html+=`</div>`;
+  }
+
+  html+='</div>';
+  grid.innerHTML=html;
+
+  // Bind folder name input events via delegation
+  grid.addEventListener('blur', async function(e){
+    const inp=e.target.closest('.folder-name-input');
+    if(!inp) return;
+    const val=inp.value.trim();
+    if(!val||val===inp.dataset.orig){inp.value=inp.dataset.orig||val;return;}
+    try{
+      await updateDoc(docFn(db,'folders',inp.dataset.fid),{name:val,updatedAt:sts()});
+      inp.dataset.orig=val; toast('已重新命名 ✓');
+    }catch(err){inp.value=inp.dataset.orig;alert('儲存失敗：'+err.message);}
+  }, true);
+  grid.addEventListener('keydown', function(e){
+    const inp=e.target.closest('.folder-name-input');
+    if(!inp) return;
+    if(e.key==='Enter'){e.preventDefault();inp.blur();}
+    if(e.key==='Escape'){inp.value=inp.dataset.orig||inp.value;inp.blur();}
+    e.stopPropagation();
+  });
+
+  // set orig on folder name inputs (fallback)
+  grid.querySelectorAll('.folder-name-input').forEach(inp=>{if(!inp.dataset.orig)inp.dataset.orig=inp.value;});
+}
+
+function listTable(ts,cols){
+  // cols: array of {label,render(t)}
+  return`<table class="lt">
+    <thead><tr>${cols.map((c,i)=>`<th ${i===0?'style="width:99%"':''}>${c.label}</th>`).join('')}</tr></thead>
+    <tbody>${ts.map(t=>`<tr>${cols.map(c=>c.render(t)).join('')}</tr>`).join('')}</tbody>
+  </table>`;
+}
+function nameCell(t){return`<td><div class="lt-name"><div class="chk ${t.pct===100?'done':''}" onclick="quickToggle('${t.id}',${t.pct})"></div><span class="tname ${t.pct===100?'struck':''}" onclick="openModal('${t.id}')">${t.task||'（未命名）'}</span></div></td>`;}
+function pctCell(t){return`<td class="td-pct"><div class="pct-inner"><div class="pct-bar"><div class="pct-fill" style="width:${t.pct||0}%"></div></div><span class="pct-num">${t.pct||0}%</span></div></td>`;}
+function dateCell(t){return`<td class="td-date ${ov(t.date)&&t.pct<100?'overdue':''}">${t.date||'—'}</td>`;}
+function projCell(t){return`<td class="td-proj">${t.project?`<span class="proj-pill">◎ ${t.project}</span>`:''}</td>`;}
+function personCell(t){return`<td class="td-person">${t.assignee?`<div class="sb-av ${gav(t.assignee)}" title="${t.assignee}" style="width:22px;height:22px">${ini(t.assignee)}</div>`:''}</td>`;}
+
+function mkSection(sid,title,count,rows,addLabel,addFn){
+  const col=collapsed[sid];
+  return`<div class="ls">
+    <div class="ls-hdr" onclick="toggleSec('${sid}')">
+      <span class="ls-tog ${col?'col':''}" id="tog_${sid}">▾</span>
+      <span class="ls-title">${title}</span>
+      <span class="ls-count">${count} 項</span>
+    </div>
+    <div id="${sid}" ${col?'style="display:none"':''}>
+      ${rows}
+      <div class="add-row" onclick="${addFn}">＋ ${addLabel}</div>
+    </div>
+  </div>`;
+}
+
+function renderProjList(pjs,grps){
+  const wrap=$id('proj-list');
+  if(!pjs.length){wrap.innerHTML='<div class="empty"><p>沒有符合條件的任務</p></div>';return;}
+  wrap.innerHTML=pjs.map(pn=>{
+    const ts=grps[pn],sid='pl_'+pn.replace(/\W/g,'_');
+    const rows=listTable(ts,[
+      {label:'任務名稱',render:nameCell},
+      {label:'完成度',render:pctCell},
+      {label:'負責人',render:personCell},
+      {label:'截止日期',render:dateCell},
+    ]);
+    return mkSection(sid,pn,ts.length,rows,'新增任務',`openModalPre('project','${pn}')`);
+  }).join('');
+  pjs.forEach(pn=>{const sid='pl_'+pn.replace(/\W/g,'_');if(collapsed[sid])$id(sid).style.display='none';});
+}
+
+window.selectMtPerson=function(name){
+  $id('mt-person').value=name;
+  // update chip active state
+  document.querySelectorAll('.person-chip').forEach(c=>{
+    c.classList.toggle('active', c.textContent.trim()===name);
+  });
+  renderMyTasks();
+};
+
+// ── My Tasks — Weekly Dashboard ──
+window.renderMyTasks=function(){
+  const person=$id('mt-person').value;
+  $id('mt-title').textContent=person?person+' 的工作進度':'我的任務';
+  const wrap=$id('mt-wrap');
+  if(!person){
+    wrap.innerHTML='<div class="empty" style="padding-top:3rem"><div style="font-size:28px">👆</div><p style="margin-top:8px">請從上方選擇人員</p></div>';
+    return;
+  }
+
+  const my=tasks.filter(t=>t.assignee===person);
+  const now=new Date();
+  const tod=now.toISOString().split('T')[0];
+  const nw=new Date(); nw.setDate(now.getDate()+7);
+  const nws=nw.toISOString().split('T')[0];
+  // week start (Monday)
+  const wkStart=new Date(now); wkStart.setDate(now.getDate()-((now.getDay()+6)%7));
+  const wks=wkStart.toISOString().split('T')[0];
+
+  // ── Groups ──
+  const overdue   = my.filter(t=>t.pct<100&&t.date&&t.date<tod);
+  const todayTs   = my.filter(t=>t.pct<100&&t.date===tod);
+  const weekTs    = my.filter(t=>t.pct<100&&t.date>tod&&t.date<=nws);
+  const laterTs   = my.filter(t=>t.pct<100&&!t.date);
+  const doneTs    = my.filter(t=>t.pct===100);
+  // this week = today + week (for summary)
+  const thisWeekAll=[...todayTs,...weekTs,...overdue];
+  const avgWeekPct= thisWeekAll.length ? Math.round(thisWeekAll.reduce((a,t)=>a+(t.pct||0),0)/thisWeekAll.length) : 0;
+  const weekDoneCount= my.filter(t=>t.pct===100&&t.date&&t.date>=wks&&t.date<=nws).length;
+
+  // ── Day label ──
+  const dayNames=['日','一','二','三','四','五','六'];
+  const todayLabel=`週${dayNames[now.getDay()]}，${tod}`;
+  const weekLabel=`${wks} ～ ${nws}`;
+
+  // ── Pct ring SVG ──
+  function ring(pct,id,color='var(--accent)'){
+    const r=13,c=17,circ=2*Math.PI*r;
+    const dash=circ*(pct/100),gap=circ-dash;
+    return`<svg class="mt-pct-ring" data-id="${id}" viewBox="0 0 34 34" style="cursor:pointer">
+      <circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="var(--bg)" stroke-width="3"/>
+      <circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="${color}" stroke-width="3"
+        stroke-dasharray="${dash.toFixed(1)} ${gap.toFixed(1)}"
+        stroke-dashoffset="${(circ/4).toFixed(1)}"
+        stroke-linecap="round"/>
+      <text x="${c}" y="${c}" text-anchor="middle" dominant-baseline="central"
+        font-size="7" font-weight="700" fill="var(--text-muted)" font-family="inherit">${pct}%</text>
+    </svg>`;
+  }
+
+  // ── Row renderer (inline editable) ──
+  function mtRow2(t,showDate=true){
+    const pjs=projects();
+    const projOpts=pjs.map(p=>`<div class="iproj-opt${t.project===p?' cur':''}" data-proj="${p}" data-id="${t.id}">${t.project===p?'✓ ':''} ${p}</div>`).join('');
+    const dateStr=t.date?t.date.slice(5).replace('-','/'):'—';
+    const isOv=ov(t.date)&&t.pct<100;
+    return`<div class="mt-row" data-id="${t.id}">
+      <div class="chk ${t.pct===100?'done':''}" data-id="${t.id}" data-pct="${t.pct||0}" onclick="quickToggle('${t.id}',${t.pct||0})"></div>
+      <div class="mt-row-left">
+        <div class="iproj-wrap mt-row-proj">
+          ${t.project
+            ?`<button class="iproj-btn" data-id="${t.id}" style="font-size:10px;padding:1px 6px">◎ ${t.project}</button>`
+            :`<span class="iproj-none" data-id="${t.id}" style="font-size:10px">＋案名</span>`}
+          <div class="iproj-dd" id="iproj_${t.id}">
+            ${t.project?`<div class="iproj-opt" data-proj="" data-id="${t.id}" style="color:var(--text-hint)">✕ 移除連結</div>`:''}
+            ${projOpts}
+          </div>
+        </div>
+        <input class="mt-tname-edit ${t.pct===100?'struck':''}"
+          value="${(t.task||'').replace(/"/g,'&quot;')}"
+          data-id="${t.id}" data-orig="${(t.task||'').replace(/"/g,'&quot;')}"
+          placeholder="輸入任務名稱..." spellcheck="false">
+      </div>
+      <div class="mt-row-right">
+        ${showDate?`<div class="mt-row-date ${isOv?'overdue':''}">
+          <input class="idate-input ${isOv?'overdue':''}" type="date" value="${t.date||''}" data-id="${t.id}" style="width:88px">
+        </div>`:''}
+        <div class="ipct-wrap">
+          ${ring(t.pct||0,t.id)}
+          <div class="ipct-popup" id="ipct_${t.id}">
+            <input type="range" min="0" max="100" step="5" value="${t.pct||0}" data-id="${t.id}">
+            <div class="ipct-val">${t.pct||0}%</div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function block(id,icon,name,desc,ts,addFn,full=false,showDate=true){
+    return`<div class="mt-block ${full?'mt-block-full':''}" id="mtb_${id}">
+      <div class="mt-block-header">
+        <div class="mt-block-title">
+          <span class="mt-block-icon">${icon}</span>
+          <div>
+            <div class="mt-block-name">${name}</div>
+            <div class="mt-block-desc">${desc}</div>
+          </div>
+        </div>
+        <span class="mt-block-count">${ts.length} 項</span>
+      </div>
+      ${ts.length
+        ? ts.map(t=>mtRow2(t,showDate)).join('')
+        : `<div class="mt-empty">目前沒有項目</div>`}
+      <div class="mt-add" onclick="${addFn}">＋ 新增任務</div>
+    </div>`;
+  }
+
+  wrap.innerHTML=`<div class="mt-dashboard">
+
+    ${overdue.length?`<div class="mt-overdue-banner">
+      <span style="font-size:16px">⚠</span>
+      <span class="ov-count">${overdue.length}</span>
+      <span>個任務已逾期未完成，請盡快處理或更新進度</span>
+      <div style="flex:1"></div>
+      <button class="btn" style="font-size:11px;padding:4px 10px" onclick="toggleMtOverdue()">查看逾期</button>
+    </div>`:''}
+
+    <div class="mt-summary-row">
+      <div class="mt-stat">
+        <div class="mt-stat-accent" style="background:#1a8f68"></div>
+        <div class="mt-stat-label">本週平均進度</div>
+        <div class="mt-stat-value" style="color:var(--accent)">${avgWeekPct}%</div>
+        <div class="mt-stat-sub">${thisWeekAll.length} 個進行中任務</div>
+      </div>
+      <div class="mt-stat">
+        <div class="mt-stat-accent" style="background:#3b82f6"></div>
+        <div class="mt-stat-label">今日執行</div>
+        <div class="mt-stat-value" style="color:#3b82f6">${todayTs.length}</div>
+        <div class="mt-stat-sub">個截止任務</div>
+      </div>
+      <div class="mt-stat">
+        <div class="mt-stat-accent" style="background:#8b5cf6"></div>
+        <div class="mt-stat-label">本週工作項目</div>
+        <div class="mt-stat-value" style="color:#8b5cf6">${weekTs.length+todayTs.length}</div>
+        <div class="mt-stat-sub">${weekLabel}</div>
+      </div>
+      <div class="mt-stat">
+        <div class="mt-stat-accent" style="background:#10b981"></div>
+        <div class="mt-stat-label">本週已完成</div>
+        <div class="mt-stat-value" style="color:#10b981">${weekDoneCount}</div>
+        <div class="mt-stat-sub">個任務完成</div>
+      </div>
+    </div>
+
+    <div id="mt-overdue-block" style="display:none">
+      ${block('ov','⚠','逾期未完成','請立即處理或調整截止日期',overdue,`openModalPre('person','${person}','${tod}')`,true)}
+    </div>
+
+    <div class="mt-blocks">
+      ${block('today','📌','今天執行',todayLabel,todayTs,`openModalPre('person','${person}','${tod}')`)}
+      ${block('week','📅','本週工作內容',weekLabel,weekTs,`openModalPre('person','${person}','${nws}')`)}
+    </div>
+
+    ${block('later','🗂','待處理','尚未設定日期的任務',laterTs,`openModalPre('person','${person}','')`,true)}
+    ${doneTs.length?block('done','✅','已完成','',doneTs,`openModalPre('person','${person}','')`,true,false):''}
+
+  </div>`;
+
+  bindMtEvents();
+};
+
+window.toggleMtOverdue=function(){
+  const el=$id('mt-overdue-block');
+  if(el) el.style.display=el.style.display==='none'?'':'none';
+};
+
+// ── My Tasks inline event delegation (bound once, survives re-renders) ──
+function initMtDelegation(){
+  const wrap=$id('mt-wrap');
+  if(wrap._delegated) return;
+  wrap._delegated=true;
+
+  // Close all popups on outside click
+  document.addEventListener('click',()=>{
+    wrap.querySelectorAll('.ipct-popup.open,.iproj-dd.open').forEach(p=>p.classList.remove('open'));
+  });
+
+  // Delegate all interactions to mt-wrap
+  wrap.addEventListener('click',async function(e){
+    // ── Pct button: open slider popup (ring SVG or ipct-btn) ──
+    const ipctBtn=e.target.closest('.ipct-btn,.mt-pct-ring');
+    if(ipctBtn){
+      e.stopPropagation();
+      const popup=$id('ipct_'+ipctBtn.dataset.id);
+      if(!popup) return;
+      const wasOpen=popup.classList.contains('open');
+      wrap.querySelectorAll('.ipct-popup.open,.iproj-dd.open').forEach(p=>p.classList.remove('open'));
+      if(!wasOpen) popup.classList.add('open');
+      return;
+    }
+
+    // ── Project pill / none button: open project dropdown ──
+    const iprojTrigger=e.target.closest('.iproj-btn,.iproj-none');
+    if(iprojTrigger){
+      e.stopPropagation();
+      const dd=$id('iproj_'+iprojTrigger.dataset.id);
+      if(!dd) return;
+      const wasOpen=dd.classList.contains('open');
+      wrap.querySelectorAll('.ipct-popup.open,.iproj-dd.open').forEach(p=>p.classList.remove('open'));
+      if(!wasOpen) dd.classList.add('open');
+      return;
+    }
+
+    // ── Project option selected ──
+    const iprojOpt=e.target.closest('.iproj-opt');
+    if(iprojOpt){
+      e.stopPropagation();
+      const proj=iprojOpt.dataset.proj;
+      const id=iprojOpt.dataset.id;
+      try{
+        await updateDoc(docFn(db,'tasks',id),{project:proj||'',updatedAt:sts()});
+        toast(proj?`已連結至「${proj}」✓`:'已移除專案連結');
+      }catch(err){alert('儲存失敗：'+err.message);}
+      const dd=$id('iproj_'+id);
+      if(dd) dd.classList.remove('open');
+      return;
+    }
+  });
+
+  // ── Task name: blur to save ──
+  wrap.addEventListener('blur',async function(e){
+    const inp=e.target.closest('.tname-edit,.mt-tname-edit');
+    if(!inp) return;
+    const val=inp.value.trim();
+    if(!val){inp.value=inp.dataset.orig;return;}
+    if(val===inp.dataset.orig) return;
+    try{
+      await updateDoc(docFn(db,'tasks',inp.dataset.id),{task:val,updatedAt:sts()});
+      inp.dataset.orig=val;
+      toast('已更新 ✓');
+    }catch(err){inp.value=inp.dataset.orig;alert('儲存失敗：'+err.message);}
+  },true);
+
+  // ── Task name: Enter to confirm, Escape to cancel ──
+  wrap.addEventListener('keydown',function(e){
+    const inp=e.target.closest('.tname-edit,.mt-tname-edit');
+    if(!inp) return;
+    if(e.key==='Enter'){e.preventDefault();inp.blur();}
+    if(e.key==='Escape'){inp.value=inp.dataset.orig;inp.blur();}
+  });
+
+  // ── Pct slider: live preview + save on change ──
+  wrap.addEventListener('input',function(e){
+    const slider=e.target.closest('.ipct-popup input[type=range]');
+    if(!slider) return;
+    const v=parseInt(slider.value);
+    const popup=slider.closest('.ipct-popup');
+    const valEl=popup.querySelector('.ipct-val');
+    const btn=popup.previousElementSibling;
+    if(valEl) valEl.textContent=v+'%';
+    if(btn){
+      const fill=btn.querySelector('.pct-fill');
+      const num=btn.querySelector('.pct-num');
+      if(fill) fill.style.width=v+'%';
+      if(num) num.textContent=v+'%';
+    }
+  });
+
+  wrap.addEventListener('change',async function(e){
+    // Pct slider save
+    const slider=e.target.closest('.ipct-popup input[type=range]');
+    if(slider){
+      const v=parseInt(slider.value);
+      try{
+        await updateDoc(docFn(db,'tasks',slider.dataset.id),{pct:v,status:cs(v),updatedAt:sts()});
+        toast('進度已更新 ✓');
+      }catch(err){alert('儲存失敗：'+err.message);}
+      slider.closest('.ipct-popup').classList.remove('open');
+      return;
+    }
+    // Date input save
+    const dateInp=e.target.closest('.idate-input');
+    if(dateInp){
+      try{
+        await updateDoc(docFn(db,'tasks',dateInp.dataset.id),{date:dateInp.value,updatedAt:sts()});
+        toast('日期已更新 ✓');
+      }catch(err){alert('儲存失敗：'+err.message);}
+    }
+  });
+}
+
+function bindMtEvents(){
+  // delegation is already set up once; nothing more needed per-render
+  initMtDelegation();
+}
+
+// ── Project Detail ──
+let curProject=null;
+
+window.openPDetail=function(pname){
+  curProject=pname;
+  nav='pdetail';
+  document.querySelectorAll('.sb-btn').forEach(e=>e.classList.remove('active'));
+  ['project','mytasks','member','pdetail'].forEach(v=>$id('view-'+v).style.display=v==='pdetail'?'':'none');
+  renderPDetail();
+};
+
+const PHASE_COLORS={
+  '評估中':'#9FE1CB','概念草圖設計':'#B5D4F4','已簽約':'#AFA9EC',
+  '建築執照掛件':'#FAC775','建築執照已取得':'#C0DD97','開工期限':'#F5C4B3',
+  '申請展期期限':'#F09595','建築期限':'#ED93B1','工程完竣_申請使用執照':'#1D9E75'
+};
+
+function renderPDetail(){
+  const pname=curProject;
+  const ts=tasks.filter(t=>t.project===pname);
+  const avgPct=ts.length?Math.round(ts.reduce((a,t)=>a+(t.pct||0),0)/ts.length):0;
+  const domStatus=cs(avgPct);
+  const doneCount=ts.filter(t=>t.pct===100).length;
+  const assignees=[...new Set(ts.map(t=>t.assignee).filter(Boolean))];
+  const now=new Date(),nw=new Date();nw.setDate(now.getDate()+7);
+  const dueCount=ts.filter(t=>t.date&&new Date(t.date)<=nw&&t.pct<100).length;
+
+  $id('pd-title').textContent=pname;
+  const bdg=$id('pd-badge');
+  bdg.textContent=domStatus;
+  bdg.className='badge '+sc(domStatus);
+  $id('pd-add-btn').onclick=()=>openModalPre('project',pname,'');
+
+  $id('pd-stats').innerHTML=`
+    <div class="stat"><div class="stat-label">整體進度</div><div class="stat-value" style="color:var(--accent)">${avgPct}%</div><div class="stat-sub">${ts.length} 個工作項目</div></div>
+    <div class="stat"><div class="stat-label">已完成</div><div class="stat-value">${doneCount}</div><div class="stat-sub">/ ${ts.length} 項</div></div>
+    <div class="stat"><div class="stat-label">負責人員</div><div class="stat-value">${assignees.length}</div><div class="stat-sub">${assignees.join('、')||'—'}</div></div>
+    <div class="stat"><div class="stat-label">本週到期</div><div class="stat-value" style="color:${dueCount?'#b84040':'inherit'}">${dueCount}</div><div class="stat-sub">個項目</div></div>`;
+
+  // progress bar
+  const barHtml=`<div style="margin:0 2rem .75rem;background:var(--border);border-radius:4px;height:6px;overflow:hidden">
+    <div style="width:${avgPct}%;height:100%;background:linear-gradient(90deg,var(--accent),#4ade9a);border-radius:4px;transition:width .4s"></div>
+  </div>`;
+
+  const allPs=persons();
+  const rows=ts.length?ts.map(t=>{
+    const phaseColor=PHASE_COLORS[t.task]||'var(--border-strong)';
+    const isOv=ov(t.date)&&t.pct<100;
+    const projOpts=`${t.assignee?`<div class="iproj-opt" data-proj="" data-id="${t.id}" style="color:var(--text-hint)">✕ 移除</div>`:''}
+      ${allPs.map(p=>`<div class="iproj-opt ${t.assignee===p?'cur':''}" data-proj="${p}" data-id="${t.id}">${t.assignee===p?'✓ ':''} ${p}</div>`).join('')}`;
+    return`<tr data-id="${t.id}">
+      <td><div class="lt-name" style="padding-left:6px">
+        <div class="chk ${t.pct===100?'done':''}" data-id="${t.id}" data-pct="${t.pct||0}" onclick="quickToggle('${t.id}',${t.pct||0})"></div>
+        <span class="pd-phase-dot" style="background:${phaseColor}" title="${t.task||''}"></span>
+        <div style="flex:1;min-width:0">
+          <input class="pd-tname-edit ${t.pct===100?'struck':''}"
+            value="${(t.task||'').replace(/"/g,'&quot;')}"
+            data-id="${t.id}" data-orig="${(t.task||'').replace(/"/g,'&quot;')}"
+            spellcheck="false" placeholder="工作項目名稱">
+          ${t.note?`<div class="pd-note">${t.note}</div>`:''}
+        </div>
+      </div></td>
+      <td class="td-pct">
+        <div class="ipct-wrap">
+          <div class="ipct-btn" data-id="${t.id}">
+            <div class="pct-bar" style="width:52px"><div class="pct-fill" style="width:${t.pct||0}%"></div></div>
+            <span class="pct-num">${t.pct||0}%</span>
+          </div>
+          <div class="ipct-popup" id="ipct_${t.id}">
+            <input type="range" min="0" max="100" step="5" value="${t.pct||0}" data-id="${t.id}">
+            <div class="ipct-val">${t.pct||0}%</div>
+          </div>
+        </div>
+      </td>
+      <td class="td-person">
+        <div class="iproj-wrap">
+          ${t.assignee
+            ?`<button class="iproj-btn" data-id="${t.id}" style="font-size:11px">
+                <span class="sb-av ${gav(t.assignee)}" style="width:18px;height:18px;font-size:9px">${ini(t.assignee)}</span>
+                ${t.assignee}</button>`
+            :`<span class="iproj-none" data-id="${t.id}" style="font-size:11px">＋ 指派</span>`}
+          <div class="iproj-dd" id="iproj_${t.id}">${projOpts}</div>
+        </div>
+      </td>
+      <td class="td-date">
+        <input class="idate-input ${isOv?'overdue':''}" type="date" value="${t.date||''}" data-id="${t.id}">
+      </td>
+      <td style="padding:8px 10px">
+        <button class="btn" style="font-size:11px;padding:3px 8px" onclick="openModal('${t.id}')">編輯</button>
+      </td>
+    </tr>`;
+  }).join('')
+  :`<tr><td colspan="5" style="padding:2rem;text-align:center;font-size:13px;color:var(--text-hint)">目前沒有工作項目，點右上角新增</td></tr>`;
+
+  $id('pd-wrap').innerHTML=barHtml+`<table class="lt">
+    <thead><tr>
+      <th style="width:99%;padding-left:18px">工作項目</th>
+      <th>完成度</th>
+      <th>負責人</th>
+      <th>截止日期</th>
+      <th></th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <div class="add-row" onclick="openModalPre('project','${pname}','')">＋ 新增工作項目</div>`;
+
+  const pdWrap=$id('pd-wrap');
+  pdWrap._delegated=false;
+  bindPdEvents();
+}
+
+function bindPdEvents(){
+  const wrap=$id('pd-wrap');
+  if(wrap._delegated) return;
+  wrap._delegated=true;
+
+  wrap.addEventListener('click',async function(e){
+    const ipctBtn=e.target.closest('.ipct-btn');
+    if(ipctBtn){
+      e.stopPropagation();
+      const popup=$id('ipct_'+ipctBtn.dataset.id);
+      if(!popup) return;
+      const wasOpen=popup.classList.contains('open');
+      wrap.querySelectorAll('.ipct-popup.open,.iproj-dd.open').forEach(p=>p.classList.remove('open'));
+      if(!wasOpen) popup.classList.add('open');
+      return;
+    }
+    const iprojTrigger=e.target.closest('.iproj-btn,.iproj-none');
+    if(iprojTrigger){
+      e.stopPropagation();
+      const dd=$id('iproj_'+iprojTrigger.dataset.id);
+      if(!dd) return;
+      const wasOpen=dd.classList.contains('open');
+      wrap.querySelectorAll('.ipct-popup.open,.iproj-dd.open').forEach(p=>p.classList.remove('open'));
+      if(!wasOpen) dd.classList.add('open');
+      return;
+    }
+    const iprojOpt=e.target.closest('.iproj-opt');
+    if(iprojOpt){
+      e.stopPropagation();
+      const val=iprojOpt.dataset.proj, id=iprojOpt.dataset.id;
+      try{
+        await updateDoc(docFn(db,'tasks',id),{assignee:val||'',updatedAt:sts()});
+        toast(val?`已指派給 ${val} ✓`:'已移除負責人');
+      }catch(err){alert('儲存失敗：'+err.message);}
+      const dd=$id('iproj_'+id);if(dd)dd.classList.remove('open');
+      return;
+    }
+  });
+
+  wrap.addEventListener('blur',async function(e){
+    const inp=e.target.closest('.pd-tname-edit');
+    if(!inp) return;
+    const val=inp.value.trim();
+    if(!val){inp.value=inp.dataset.orig;return;}
+    if(val===inp.dataset.orig) return;
+    try{
+      await updateDoc(docFn(db,'tasks',inp.dataset.id),{task:val,updatedAt:sts()});
+      inp.dataset.orig=val; toast('已更新 ✓');
+    }catch(err){inp.value=inp.dataset.orig;alert('儲存失敗：'+err.message);}
+  },true);
+
+  wrap.addEventListener('keydown',function(e){
+    const inp=e.target.closest('.pd-tname-edit');
+    if(!inp) return;
+    if(e.key==='Enter'){e.preventDefault();inp.blur();}
+    if(e.key==='Escape'){inp.value=inp.dataset.orig;inp.blur();}
+  });
+
+  wrap.addEventListener('input',function(e){
+    const slider=e.target.closest('.ipct-popup input[type=range]');
+    if(!slider) return;
+    const v=parseInt(slider.value);
+    const popup=slider.closest('.ipct-popup');
+    const valEl=popup.querySelector('.ipct-val');
+    const btn=popup.previousElementSibling;
+    if(valEl) valEl.textContent=v+'%';
+    if(btn){const f=btn.querySelector('.pct-fill'),n=btn.querySelector('.pct-num');if(f)f.style.width=v+'%';if(n)n.textContent=v+'%';}
+  });
+
+  wrap.addEventListener('change',async function(e){
+    const slider=e.target.closest('.ipct-popup input[type=range]');
+    if(slider){
+      const v=parseInt(slider.value);
+      try{await updateDoc(docFn(db,'tasks',slider.dataset.id),{pct:v,status:cs(v),updatedAt:sts()});toast('進度已更新 ✓');}
+      catch(err){alert('儲存失敗：'+err.message);}
+      slider.closest('.ipct-popup').classList.remove('open');
+      return;
+    }
+    const dateInp=e.target.closest('.idate-input');
+    if(dateInp){
+      try{await updateDoc(docFn(db,'tasks',dateInp.dataset.id),{date:dateInp.value,updatedAt:sts()});toast('日期已更新 ✓');}
+      catch(err){alert('儲存失敗：'+err.message);}
+    }
+  });
+
+  document.addEventListener('click',()=>{
+    wrap.querySelectorAll('.ipct-popup.open,.iproj-dd.open').forEach(p=>p.classList.remove('open'));
+  });
+}
+
+// ── Folder Management ──
+const FOLDER_COLORS=['#1a8f68','#3b82f6','#8b5cf6','#f59e0b','#ef4444','#ec4899','#14b8a6','#f97316'];
+
+function syncSidebarFolders(){
+  const sb=$id('sb-folders');
+  if(!sb) return;
+  sb.innerHTML=folders.map(f=>`
+    <button class="sb-folder-item" onclick="scrollToFolder('${f.id}',this)">
+      <span class="sb-folder-dot" style="background:${f.color||'#888'}"></span>
+      ${f.name}
+      <span style="margin-left:auto;font-size:10px;opacity:.5">${(f.projects||[]).length}</span>
+    </button>`).join('');
+}
+
+window.scrollToFolder=function(fid,el){
+  switchNav('project',null);
+  document.querySelectorAll('.sb-btn').forEach(e=>e.classList.remove('active'));
+  setTimeout(()=>{
+    const header=document.querySelector(`.folder-header[data-fid="${fid}"]`);
+    if(header) header.scrollIntoView({behavior:'smooth',block:'start'});
+  },100);
+};
+
+window.createFolder=async function(){
+  const name=prompt('資料夾名稱：');
+  if(!name||!name.trim()) return;
+  const color=FOLDER_COLORS[folders.length%FOLDER_COLORS.length];
+  try{
+    await addDoc(folderCol,{name:name.trim(),color,projects:[],createdAt:sts()});
+    toast('資料夾已建立 ✓');
+  }catch(e){alert('建立失敗：'+e.message);}
+};
+
+window.setFolderView=function(e,fid,view){
+  e.stopPropagation();
+  folderViews[fid]=view;
+  renderProject();
+};
+
+window.toggleFolderCollapse=function(fid,el){
+  collapsed['folder_'+fid]=!collapsed['folder_'+fid];
+  renderProject();
+};
+
+window.renameFolderInline=async function(inp){
+  const val=inp.value.trim();
+  if(!val||val===inp.dataset.orig){inp.value=inp.dataset.orig||val;return;}
+  try{
+    await updateDoc(docFn(db,'folders',inp.dataset.fid),{name:val,updatedAt:sts()});
+    inp.dataset.orig=val; toast('已重新命名 ✓');
+  }catch(e){inp.value=inp.dataset.orig;alert('儲存失敗：'+e.message);}
+};
+
+window.deleteFolder=async function(fid){
+  if(!confirm('刪除資料夾？裡面的專案不會被刪除，只會移出資料夾。')) return;
+  try{
+    await deleteDoc(docFn(db,'folders',fid)); toast('資料夾已刪除');
+  }catch(e){alert('刪除失敗：'+e.message);}
+};
+
+window.openFolderColorPicker=function(fid){
+  const color=FOLDER_COLORS[Math.floor(Math.random()*FOLDER_COLORS.length)];
+  // cycle through colors
+  const f=folders.find(x=>x.id===fid);
+  if(!f) return;
+  const idx=(FOLDER_COLORS.indexOf(f.color||'#1a8f68')+1)%FOLDER_COLORS.length;
+  updateDoc(docFn(db,'folders',fid),{color:FOLDER_COLORS[idx]});
+};
+
+window.toggleFolderPicker=function(e,pid){
+  e.stopPropagation();
+  const popup=$id(pid);
+  if(!popup) return;
+  const wasOpen=popup.classList.contains('open');
+  document.querySelectorAll('.ap.open').forEach(p=>p.classList.remove('open'));
+  if(!wasOpen) popup.classList.add('open');
+};
+
+window.assignToFolder=async function(e,pname,fid,pickerPid){
+  e.stopPropagation();
+  // Remove from all folders first
+  const updates=folders.map(f=>{
+    const projs=(f.projects||[]).filter(p=>p!==pname);
+    if(f.id===fid) projs.push(pname);
+    return updateDoc(docFn(db,'folders',f.id),{projects:projs});
+  });
+  try{
+    await Promise.all(updates); toast('已加入資料夾 ✓');
+    const pp=$id(pickerPid);if(pp)pp.classList.remove('open');
+  }catch(err){alert('儲存失敗：'+err.message);}
+};
+
+window.removeFromFolder=async function(e,pname,pickerPid){
+  e.stopPropagation();
+  const updates=folders.map(f=>
+    updateDoc(docFn(db,'folders',f.id),{projects:(f.projects||[]).filter(p=>p!==pname)})
+  );
+  try{
+    await Promise.all(updates); toast('已移出資料夾');
+    const pp=$id(pickerPid);if(pp)pp.classList.remove('open');
+  }catch(err){alert('儲存失敗：'+err.message);}
+};
+
+window.openAddProjectToFolder=async function(fid){
+  const pjs=projects();
+  const f=folders.find(x=>x.id===fid);
+  if(!f) return;
+  const inFolder=f.projects||[];
+  const available=pjs.filter(p=>!inFolder.includes(p));
+  if(!available.length){alert('所有專案都已在此資料夾中。');return;}
+  const name=prompt('輸入要加入的專案名稱（可輸入多個，用逗號分隔）：\n\n可用專案：\n'+available.join('、'));
+  if(!name||!name.trim()) return;
+  const toAdd=name.split(/[,，]/).map(s=>s.trim()).filter(s=>pjs.includes(s));
+  if(!toAdd.length){alert('找不到符合的專案名稱，請確認拼字。');return;}
+  const newProjs=[...new Set([...inFolder,...toAdd])];
+  try{
+    await updateDoc(docFn(db,'folders',fid),{projects:newProjs});
+    toast(`已加入 ${toAdd.length} 個專案 ✓`);
+  }catch(e){alert('儲存失敗：'+e.message);}
+};
+
+window.createFolderAndAdd=async function(e,pname){
+  e.stopPropagation();
+  document.querySelectorAll('.ap.open').forEach(p=>p.classList.remove('open'));
+  const name=prompt('新資料夾名稱：');
+  if(!name||!name.trim()) return;
+  const color=FOLDER_COLORS[folders.length%FOLDER_COLORS.length];
+  try{
+    await addDoc(folderCol,{name:name.trim(),color,projects:[pname],createdAt:sts()});
+    toast('資料夾已建立並加入專案 ✓');
+  }catch(e){alert('建立失敗：'+e.message);}
+};
+
+// ── Member view ──
+function renderMember(){
+  const name=curMember,ts=tasks.filter(t=>t.assignee===name);
+  const pjs=[...new Set(ts.map(t=>t.project).filter(Boolean))];
+  $id('mem-wrap').innerHTML=`
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">
+      ${pjs.map(p=>`<span class="proj-pill">◎ ${p}</span>`).join('')}
+    </div>
+    ${listTable(ts,[
+      {label:'任務名稱',render:t=>`<td><div class="lt-name" style="cursor:pointer" onclick="openModal('${t.id}')"><div class="chk ${t.pct===100?'done':''}" onclick="event.stopPropagation();quickToggle('${t.id}',${t.pct})"></div><span class="tname ${t.pct===100?'struck':''}">${t.task||'（未命名）'}</span>${t.project?`<span class="proj-pill" style="font-size:10px">◎ ${t.project}</span>`:''}</div></td>`},
+      {label:'完成度',render:pctCell},
+      {label:'截止日期',render:dateCell},
+    ])}
+    <div class="add-row" onclick="openModalPre('person','${name}')">＋ 新增任務</div>`;
+}
+
+// ── Toggle section ──
+window.toggleSec=function(sid){
+  collapsed[sid]=!collapsed[sid];
+  $id(sid).style.display=collapsed[sid]?'none':'';
+  $id('tog_'+sid).classList.toggle('col',!!collapsed[sid]);
+};
+
+// ── Quick toggle ──
+window.quickToggle=async function(id,p){
+  const np=p===100?0:100;
+  try{await updateDoc(docFn(db,'tasks',id),{pct:np,status:cs(np),updatedAt:sts()});}
+  catch(e){alert('更新失敗：'+e.message);}
+};
+
+// ── Modal ──
+window.openModal=function(id=null){
+  editId=id;const t=id?tasks.find(x=>x.id===id):null;
+  $id('modal-title').textContent=t?'編輯工作進度':'新增工作進度';
+  $id('btn-delete').style.display=t?'':'none';
+  const ps=$id('f-project');
+  if(t&&t.project){if(![...ps.options].some(o=>o.value===t.project))ps.add(new Option(t.project,t.project),0);ps.value=t.project;}
+  else ps.value=ps.options[0]?.value||'__new__';
+  $id('new-proj-g').style.display=ps.value==='__new__'?'':'none';
+  $id('f-new-proj').value='';
+  const tv=t?.task||'';
+  $id('f-task').value=tv;
+  document.querySelectorAll('.cb-opt').forEach(o=>o.classList.toggle('sel',o.dataset.v===tv));
+  const pct=t?.pct??0;
+  $id('f-pct').value=pct;$id('f-pct-lbl').textContent=pct+'%';
+  const per=$id('f-person');
+  if(t&&t.assignee){
+    if(![...per.options].some(o=>o.value===t.assignee))per.add(new Option(t.assignee,t.assignee),0);
+    per.value=t.assignee;
+  } else {
+    // 新增時預設第一位人員，若沒有人員才顯示新增輸入框
+    const firstPerson=[...per.options].find(o=>o.value!=='__new__');
+    per.value=firstPerson?firstPerson.value:'__new__';
+  }
+  $id('new-person-g').style.display=per.value==='__new__'?'':'none';
+  $id('f-new-person').value='';
+  $id('f-date').value=t?.date||'';$id('f-note').value=t?.note||'';
+  $id('overlay').classList.add('open');
+};
+window.openModalPre=function(type,val,date){
+  openModal();
+  if(type==='project'){const ps=$id('f-project');if([...ps.options].some(o=>o.value===val))ps.value=val;$id('new-proj-g').style.display=ps.value==='__new__'?'':'none';}
+  else{const per=$id('f-person');if([...per.options].some(o=>o.value===val))per.value=val;$id('new-person-g').style.display=per.value==='__new__'?'':'none';}
+  if(date!==undefined) $id('f-date').value=date;
+};
+window.closeModal=function(){$id('overlay').classList.remove('open');editId=null;};
+window.handleOverlayClick=function(e){if(e.target===$id('overlay'))closeModal();};
+window.handleProjectChange=function(){$id('new-proj-g').style.display=$id('f-project').value==='__new__'?'':'none';};
+window.showAddPersonInput=function(){
+  const per=$id('f-person');
+  per.value='__new__';
+  $id('new-person-g').style.display='';
+  $id('f-new-person').focus();
+};
+$id('f-person').addEventListener('change',function(){
+  $id('new-person-g').style.display=this.value==='__new__'?'':'none';
+  if(this.value!=='__new__') $id('f-new-person').value='';
+});
+
+window.saveTask=async function(){
+  let project=$id('f-project').value;
+  if(project==='__new__'){project=$id('f-new-proj').value.trim();if(!project){alert('請輸入專案名稱');return;}}
+  const task=$id('f-task').value.trim();if(!task){alert('請填寫工作項目描述');return;}
+  const pct=parseInt($id('f-pct').value)||0;
+  let assignee=$id('f-person').value;
+  if(assignee==='__new__'){assignee=$id('f-new-person').value.trim();if(!assignee){alert('請輸入負責人姓名');return;}}
+  const date=$id('f-date').value,note=$id('f-note').value.trim(),status=cs(pct);
+  const payload={project,task,pct,assignee,date,note,status,updatedAt:sts()};
+  try{
+    if(editId){await updateDoc(docFn(db,'tasks',editId),payload);toast('已更新 ✓');}
+    else{await addDoc(col,{...payload,createdAt:sts()});toast('已新增 ✓');}
+    // Auto-add new person to members collection if not already there
+    if(assignee&&!members.find(m=>m.name===assignee)){
+      await addDoc(memberCol,{name:assignee,role:'',note:'',createdAt:sts()});
+    }
+    closeModal();
+  }catch(e){alert('儲存失敗：'+e.message);}
+};
+
+// ── Combobox ──
+const cbi=$id('f-task'),cbd=$id('cb-dd');
+cbi.addEventListener('focus',()=>cbd.classList.add('open'));
+cbi.addEventListener('input',()=>{
+  cbd.classList.add('open');const q=cbi.value.toLowerCase();
+  cbd.querySelectorAll('.cb-opt').forEach(o=>o.style.display=(!q||o.dataset.v.toLowerCase().includes(q)||o.textContent.toLowerCase().includes(q))?'':'none');
+});
+document.addEventListener('click',e=>{if(!$id('cb-wrap').contains(e.target))cbd.classList.remove('open');});
+window.selectTask=function(el){
+  cbi.value=el.dataset.v;
+  cbd.querySelectorAll('.cb-opt').forEach(o=>o.classList.remove('sel'));
+  el.classList.add('sel');cbd.classList.remove('open');
+  if(el.dataset.p){const p=parseInt(el.dataset.p);$id('f-pct').value=p;$id('f-pct-lbl').textContent=p+'%';}
+  cbi.focus();
+};
+
+// ── Assign ──
+window.toggleAp=function(e,sid){
+  e.stopPropagation();
+  const el=$id(sid);
+  if(!el) return;
+  const was=el.classList.contains('open');
+  document.querySelectorAll('.ap.open').forEach(p=>p.classList.remove('open'));
+  if(!was) el.classList.add('open');
+};
+window.setScope=function(e,sid,scope){
+  e.stopPropagation();
+  apScopes[sid]=scope;
+  // find buttons within the same popup, don't rely on global id
+  const popup=$id(sid);
+  if(!popup) return;
+  popup.querySelectorAll('.ap-scope-btn').forEach(btn=>{
+    btn.classList.toggle('active', btn.textContent.trim()===(scope==='all'?'全部任務':'僅未指派'));
+  });
+};
+window.doAssign=async function(e,pn,person,sid){
+  e.stopPropagation();
+  const scope=apScopes[sid]||'all';
+  const tgts=tasks.filter(t=>t.project===pn&&(scope==='all'||!t.assignee));
+  if(!tgts.length){toast('沒有符合條件的任務');return;}
+  try{
+    await Promise.all(tgts.map(t=>updateDoc(docFn(db,'tasks',t.id),{assignee:person,updatedAt:sts()})));
+    toast(`已將 ${tgts.length} 個任務指派給 ${person} ✓`);
+    const popup=$id(sid);
+    if(popup) popup.classList.remove('open');
+  }catch(err){alert('指派失敗：'+err.message);}
+};
+window.addPersonAssign=function(e,pn,sid){
+  e.stopPropagation();$id(sid).classList.remove('open');
+  const n=prompt('新增人員姓名：');if(!n||!n.trim())return;
+  doAssign(e,pn,n.trim(),sid);
+};
+document.addEventListener('click',()=>document.querySelectorAll('.ap.open').forEach(p=>p.classList.remove('open')));
+
+// ── Member Management Page ──
+function renderMembersPage(){
+  const wrap=$id('members-wrap');
+  // Merge: members collection + persons from tasks not yet in collection
+  const ps=persons();
+  const memberNames=members.map(m=>m.name);
+  // Ensure task-only persons show as cards too
+  const allNames=[...new Set([...memberNames,...ps])].sort();
+
+  wrap.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <div style="font-size:13px;color:var(--text-muted)">${allNames.length} 位人員</div>
+      <button class="btn btn-primary" onclick="openMemberModal(null)">＋ 新增人員</button>
+    </div>
+    <div class="mgmt-grid">
+      ${allNames.map(name=>{
+        const m=members.find(x=>x.name===name);
+        const myTasks=tasks.filter(t=>t.assignee===name);
+        const done=myTasks.filter(t=>t.pct===100).length;
+        const ongoing=myTasks.filter(t=>t.pct>0&&t.pct<100).length;
+        const avCls=gav(name);
+        return`<div class="member-mgmt-card">
+          <div class="member-mgmt-top">
+            <div class="member-mgmt-av ${avCls}">${ini(name)}</div>
+            <div class="member-mgmt-info">
+              <div class="member-mgmt-name">${name}</div>
+              <div class="member-mgmt-role">${m?.role||'—'}</div>
+            </div>
+          </div>
+          ${m?.note?`<div class="member-mgmt-note">${m.note}</div>`:''}
+          <div class="member-mgmt-stats">
+            <div class="member-mgmt-stat">
+              <div class="member-mgmt-stat-val">${myTasks.length}</div>
+              <div class="member-mgmt-stat-lbl">總任務</div>
+            </div>
+            <div class="member-mgmt-stat">
+              <div class="member-mgmt-stat-val" style="color:var(--accent)">${ongoing}</div>
+              <div class="member-mgmt-stat-lbl">進行中</div>
+            </div>
+            <div class="member-mgmt-stat">
+              <div class="member-mgmt-stat-val" style="color:#10b981">${done}</div>
+              <div class="member-mgmt-stat-lbl">已完成</div>
+            </div>
+          </div>
+          <div class="member-mgmt-actions">
+            <button class="btn" style="flex:1;font-size:12px" onclick="switchMember('${name}',null)">查看任務</button>
+            <button class="btn" style="font-size:12px" onclick="openMemberModal('${name}')">編輯</button>
+          </div>
+        </div>`;
+      }).join('')}
+      <div class="add-member-card" onclick="openMemberModal(null)">
+        <div class="add-member-card-icon">＋</div>
+        <div class="add-member-card-label">新增人員</div>
+      </div>
+    </div>`;
+}
+
+window.openMemberModal=async function(name=null){
+  editMemberId=null;
+  let m=name?members.find(x=>x.name===name):null;
+
+  // If person exists in tasks but not in members collection, create a record first
+  if(name&&!m){
+    try{
+      const ref=await addDoc(memberCol,{name,role:'',note:'',createdAt:sts()});
+      // Wait for local state to update via onSnapshot — use the ref id directly
+      editMemberId=ref.id;
+    }catch(e){alert('初始化人員失敗：'+e.message);return;}
+  } else if(m){
+    editMemberId=m.id;
+  }
+
+  $id('member-modal-title').textContent=name?'編輯人員':'新增人員';
+  $id('fm-name').value=name||'';
+  $id('fm-role').value=m?.role||'';
+  $id('fm-note').value=m?.note||'';
+  // Always show delete button when editing an existing person
+  $id('fm-delete').style.display=name?'':'none';
+  updateMemberAvPreview();
+  $id('member-overlay').classList.add('open');
+  setTimeout(()=>$id('fm-name').focus(),50);
+};
+
+window.closeMemberModal=function(){
+  $id('member-overlay').classList.remove('open');
+  editMemberId=null;
+};
+
+window.updateMemberAvPreview=function(){
+  const name=$id('fm-name').value.trim();
+  const prev=$id('member-av-preview');
+  prev.textContent=name?ini(name):'?';
+  prev.className='member-modal-av-preview '+(name?gav(name):'');
+};
+
+window.saveMember=async function(){
+  const name=$id('fm-name').value.trim();
+  if(!name){alert('請輸入姓名');return;}
+  const role=$id('fm-role').value.trim();
+  const note=$id('fm-note').value.trim();
+  const payload={name,role,note,updatedAt:sts()};
+  try{
+    if(editMemberId){
+      await updateDoc(docFn(db,'members',editMemberId),payload);
+      // Also update existing tasks if name changed
+      const oldM=members.find(m=>m.id===editMemberId);
+      if(oldM&&oldM.name!==name){
+        const toUpdate=tasks.filter(t=>t.assignee===oldM.name);
+        await Promise.all(toUpdate.map(t=>updateDoc(docFn(db,'tasks',t.id),{assignee:name,updatedAt:sts()})));
+      }
+      toast('已更新 ✓');
+    } else {
+      await addDoc(memberCol,{...payload,createdAt:sts()});
+      toast('人員已新增 ✓');
+    }
+    closeMemberModal();
+  }catch(e){alert('儲存失敗：'+e.message);}
+};
+
+window.deleteMember=async function(){
+  // Find member by id or by name in fm-name field
+  let m=editMemberId?members.find(x=>x.id===editMemberId):null;
+  if(!m){
+    const name=$id('fm-name').value.trim();
+    m=members.find(x=>x.name===name);
+    if(m) editMemberId=m.id;
+  }
+  if(!editMemberId){alert('找不到人員資料，請重新開啟');return;}
+  const memberName=m?.name||$id('fm-name').value.trim();
+  const taskCount=tasks.filter(t=>t.assignee===memberName).length;
+  const msg=taskCount>0
+    ?`確定要刪除「${memberName}」？此人員有 ${taskCount} 個任務，任務不會被刪除，但負責人欄位將清空。`
+    :`確定要刪除「${memberName}」？`;
+  if(!confirm(msg))return;
+  try{
+    if(taskCount>0){
+      await Promise.all(tasks.filter(t=>t.assignee===memberName).map(t=>updateDoc(docFn(db,'tasks',t.id),{assignee:'',updatedAt:sts()})));
+    }
+    await deleteDoc(docFn(db,'members',editMemberId));
+    toast('人員已刪除');
+    closeMemberModal();
+  }catch(e){alert('刪除失敗：'+e.message);}
+};
+
+
+// ── Calendar ──
+const EV_TYPES={
+  deadline:{label:'截止日期',cls:'ev-deadline',dot:'dot-deadline'},
+  start:   {label:'開工期限',cls:'ev-start',   dot:'dot-start'},
+  submit:  {label:'送件期限',cls:'ev-submit',  dot:'dot-submit'},
+  milestone:{label:'里程碑', cls:'ev-milestone',dot:'dot-milestone'},
+  meeting: {label:'會議',    cls:'ev-meeting',  dot:'dot-meeting'},
+  other:   {label:'其他',    cls:'ev-other',    dot:'dot-other'},
+};
+let selectedCalDate=null;
+
+function calDateStr(y,m,d){return`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;}
+function todayStr(){const n=new Date();return calDateStr(n.getFullYear(),n.getMonth(),n.getDate());}
+
+function getAllCalEvents(){
+  const evs=[...calEvents];
+  tasks.forEach(t=>{if(t.date)evs.push({id:'task_'+t.id,title:t.task||'（未命名）',date:t.date,type:'deadline',project:t.project,assignee:t.assignee,pct:t.pct||0,_fromTask:true});});
+  return evs;
+}
+function evsByDate(){
+  const map={};
+  getAllCalEvents().forEach(e=>{if(!e.date)return;if(!map[e.date])map[e.date]=[];map[e.date].push(e);});
+  return map;
+}
+
+window.setCalView=function(v,el){
+  calView=v;
+  document.querySelectorAll('.cal-view-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  renderCalendar();
+};
+window.calNav=function(dir){
+  if(calView==='month'){
+    calMonth+=dir;
+    if(calMonth>11){calMonth=0;calYear++;}
+    if(calMonth<0){calMonth=11;calYear--;}
+  }else{
+    const d=new Date(calWeekStart||new Date());
+    d.setDate(d.getDate()+dir*7);calWeekStart=d;
+  }
+  renderCalendar();
+};
+window.calGoToday=function(){
+  const n=new Date();
+  calYear=n.getFullYear();calMonth=n.getMonth();
+  calWeekStart=new Date(n);calWeekStart.setDate(n.getDate()-((n.getDay()+6)%7));
+  selectCalDate(todayStr());
+  renderCalendar();
+};
+
+function renderCalendar(){
+  const body=$id('cal-body');if(!body)return;
+  if(calView==='month')renderMonthCal(body);else renderWeekCal(body);
+}
+
+// ── Click date → side panel ──
+window.selectCalDate=function(date){
+  selectedCalDate=date;
+  document.querySelectorAll('[data-date].selected').forEach(el=>el.classList.remove('selected'));
+  document.querySelectorAll(`[data-date="${date}"]`).forEach(el=>el.classList.add('selected'));
+  renderCalPanel(date);
+};
+
+function renderCalPanel(date){
+  if(!date)return;
+  const d=new Date(date+'T00:00:00');
+  const WDAYS=['日','一','二','三','四','五','六'];
+  $id('cal-panel-date').textContent=`${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
+  $id('cal-panel-day').textContent=`週${WDAYS[d.getDay()]}`;
+  const dayEvs=evsByDate()[date]||[];
+  const evList=$id('cal-panel-events');
+  if(!dayEvs.length){
+    evList.innerHTML=`<div class="cal-panel-empty">
+      <div style="font-size:24px;margin-bottom:8px">📅</div>
+      <div style="margin-bottom:12px">當日沒有事件</div>
+      <button class="btn btn-primary" style="font-size:12px;width:100%" onclick="showCalForm(null)">＋ 新增事件</button>
+    </div>`;
+  }else{
+    evList.innerHTML=dayEvs.map(e=>{
+      const tc=EV_TYPES[e.type]||EV_TYPES.other;
+      const isTask=e._fromTask;
+      const editFn=isTask?`calEditTask('${e.id.replace('task_','')}')`:`showCalForm('${e.id}')`;
+      return`<div class="cal-panel-item" onclick="${editFn}">
+        <div class="cal-panel-dot ${tc.dot}"></div>
+        <div class="cal-panel-info">
+          <div class="cal-panel-title">${e.title}</div>
+          <div class="cal-panel-meta">${tc.label}${e.project?' · '+e.project:''}${isTask&&e.assignee?' · '+e.assignee:''}</div>
+          ${isTask?`<div style="margin-top:4px;display:flex;align-items:center;gap:6px"><div style="flex:1;height:3px;border-radius:2px;background:var(--bg);overflow:hidden"><div style="width:${e.pct}%;height:100%;background:var(--accent);border-radius:2px"></div></div><span style="font-size:10px;color:var(--text-hint)">${e.pct}%</span></div>`:''}
+        </div>
+        <button class="cal-panel-edit" onclick="event.stopPropagation();${editFn}">${isTask?'編輯任務':'編輯'}</button>
+      </div>`;
+    }).join('')+`<div style="padding:.625rem 1.125rem;border-top:1px dashed var(--border)">
+      <button class="btn" style="width:100%;font-size:12px" onclick="showCalForm(null)">＋ 新增事件</button>
+    </div>`;
+  }
+  // Refresh project select in form
+  const ps=$id('cpf-project');
+  if(ps) ps.innerHTML='<option value="">不關聯專案</option>'+projects().map(p=>`<option>${p}</option>`).join('');
+}
+
+window.calEditTask=function(taskId){
+  hideCalForm();
+  setTimeout(()=>openModal(taskId),50);
+};
+
+window.showCalForm=function(evId=null){
+  editCalId=evId;
+  const ev=evId?calEvents.find(e=>e.id===evId):null;
+  $id('cal-form-title').textContent=evId?'編輯事件':'新增事件';
+  $id('cpf-title').value=ev?.title||'';
+  $id('cpf-type').value=ev?.type||'deadline';
+  $id('cpf-date').value=ev?.date||selectedCalDate||todayStr();
+  const ps=$id('cpf-project');
+  ps.innerHTML='<option value="">不關聯專案</option>'+projects().map(p=>`<option>${p}</option>`).join('');
+  ps.value=ev?.project||'';
+  $id('cpf-note').value=ev?.note||'';
+  $id('cpf-delete').style.display=evId?'':'none';
+  $id('cal-panel-form').style.display='';
+  setTimeout(()=>$id('cpf-title').focus(),50);
+};
+
+window.hideCalForm=function(){
+  $id('cal-panel-form').style.display='none';
+  editCalId=null;
+};
+
+window.saveCalEvent=async function(){
+  const title=$id('cpf-title').value.trim();
+  if(!title){alert('請輸入事件名稱');return;}
+  const payload={title,type:$id('cpf-type').value,date:$id('cpf-date').value,
+    project:$id('cpf-project').value,note:$id('cpf-note').value.trim(),updatedAt:sts()};
+  try{
+    if(editCalId){await updateDoc(docFn(db,'calEvents',editCalId),payload);toast('已更新 ✓');}
+    else{await addDoc(calCol,{...payload,createdAt:sts()});toast('已新增 ✓');}
+    hideCalForm();
+    if(selectedCalDate)renderCalPanel(selectedCalDate);
+  }catch(e){alert('儲存失敗：'+e.message);}
+};
+
+window.deleteCalEvent=async function(){
+  if(!editCalId)return;
+  if(!confirm('確定要刪除這個事件？'))return;
+  try{
+    await deleteDoc(docFn(db,'calEvents',editCalId));
+    toast('事件已刪除');hideCalForm();
+    if(selectedCalDate)renderCalPanel(selectedCalDate);
+  }catch(e){alert('刪除失敗：'+e.message);}
+};
+
+function renderMonthCal(body){
+  const DAYS=['一','二','三','四','五','六','日'];
+  const MN=['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
+  $id('cal-title').textContent=`${calYear} 年 ${MN[calMonth]}`;
+  const first=new Date(calYear,calMonth,1);
+  const startDay=(first.getDay()+6)%7;
+  const dim=new Date(calYear,calMonth+1,0).getDate();
+  const dip=new Date(calYear,calMonth,0).getDate();
+  const ebd=evsByDate(),tod=todayStr();
+  let cells='';
+  for(let i=0;i<42;i++){
+    let date,isOther=false;
+    if(i<startDay){date=new Date(calYear,calMonth-1,dip-startDay+1+i);isOther=true;}
+    else if(i>=startDay+dim){date=new Date(calYear,calMonth+1,i-startDay-dim+1);isOther=true;}
+    else{date=new Date(calYear,calMonth,i-startDay+1);}
+    const ds=calDateStr(date.getFullYear(),date.getMonth(),date.getDate());
+    const dayEvs=ebd[ds]||[];
+    cells+=`<div class="cal-cell${isOther?' other-month':''}${ds===tod?' today':''}${ds===selectedCalDate?' selected':''}" data-date="${ds}" onclick="selectCalDate('${ds}')">
+      <div class="cal-day-num">${date.getDate()}</div>
+      ${dayEvs.slice(0,3).map(e=>`<div class="cal-event ${(EV_TYPES[e.type]||EV_TYPES.other).cls}" title="${e.title}">${e.title}</div>`).join('')}
+      ${dayEvs.length>3?`<div class="cal-more">＋${dayEvs.length-3}</div>`:''}
+    </div>`;
+    if(i>=startDay+dim-1&&i>=41)break;
+  }
+  body.innerHTML=`<div class="cal-grid-header">${DAYS.map(d=>`<span>${d}</span>`).join('')}</div><div class="cal-grid">${cells}</div>`;
+}
+
+function renderWeekCal(body){
+  const DAYS=['一','二','三','四','五','六','日'];
+  if(!calWeekStart){const n=new Date();calWeekStart=new Date(n);calWeekStart.setDate(n.getDate()-((n.getDay()+6)%7));}
+  const ws=new Date(calWeekStart),we=new Date(ws);we.setDate(ws.getDate()+6);
+  $id('cal-title').textContent=`${ws.getMonth()+1}/${ws.getDate()} ～ ${we.getMonth()+1}/${we.getDate()}`;
+  const tod=todayStr(),ebd=evsByDate();
+  const days=Array.from({length:7},(_,i)=>{const d=new Date(ws);d.setDate(ws.getDate()+i);return d;});
+  const hdr=days.map((d,i)=>{
+    const ds=calDateStr(d.getFullYear(),d.getMonth(),d.getDate());
+    return`<div class="cal-week-day-hdr${ds===tod?' today':''}${ds===selectedCalDate?' selected':''}" data-date="${ds}" onclick="selectCalDate('${ds}')">
+      <div class="wday">${DAYS[i]}</div><div class="wdate">${d.getDate()}</div></div>`;
+  }).join('');
+  const alldayRow=days.map(d=>{
+    const ds=calDateStr(d.getFullYear(),d.getMonth(),d.getDate());
+    return`<div class="cal-allday-cell${ds===selectedCalDate?' selected':''}" data-date="${ds}" onclick="selectCalDate('${ds}')">
+      ${(ebd[ds]||[]).map(e=>`<div class="cal-event ${(EV_TYPES[e.type]||EV_TYPES.other).cls}" title="${e.title}" onclick="event.stopPropagation();selectCalDate('${ds}')">${e.title}</div>`).join('')}
+    </div>`;
+  }).join('');
+  const hours=Array.from({length:24},(_,i)=>i);
+  body.innerHTML=`<div style="display:flex;flex-direction:column;flex:1;min-height:0">
+    <div class="cal-week-header"><div style="border-right:1px solid var(--border)"></div>${hdr}</div>
+    <div class="cal-allday-row"><div class="cal-allday-label">全天</div>${alldayRow}</div>
+    <div class="cal-week-body" style="flex:1;overflow:auto">
+      <div class="cal-time-col">${hours.map(h=>`<div class="cal-time-slot">${h?String(h).padStart(2,'0')+':00':''}</div>`).join('')}</div>
+      ${days.map(d=>{
+        const ds=calDateStr(d.getFullYear(),d.getMonth(),d.getDate());
+        return`<div class="cal-week-col${ds===selectedCalDate?' selected':''}" data-date="${ds}" onclick="selectCalDate('${ds}')">
+          ${hours.map(()=>`<div class="cal-week-hour"></div>`).join('')}</div>`;
+      }).join('')}
+    </div></div>`;
+}
+
+// ── Search ──
+function highlight(text, q) {
+  if(!q||!text) return text||'';
+  const safe=q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  return text.replace(new RegExp(`(${safe})`,'gi'),'<mark>$1</mark>');
+}
+
+window.onSearchInput=function(){
+  const q=$id('search-input').value.trim();
+  $id('search-clear').classList.toggle('show', q.length>0);
+  if(!q){ $id('search-results').classList.remove('open'); return; }
+  runSearch(q);
+};
+
+window.onSearchFocus=function(){
+  const q=$id('search-input').value.trim();
+  if(q) runSearch(q);
+};
+
+window.clearSearch=function(){
+  $id('search-input').value='';
+  $id('search-clear').classList.remove('show');
+  $id('search-results').classList.remove('open');
+};
+
+function runSearch(q){
+  const ql=q.toLowerCase();
+  const results=[];
+
+  // Search tasks
+  tasks.forEach(t=>{
+    const fields=[t.task,t.project,t.assignee,t.note];
+    if(fields.some(f=>f&&f.toLowerCase().includes(ql))){
+      results.push({type:'task',id:t.id,title:t.task||'（未命名）',sub:`${t.project||''}${t.assignee?' · '+t.assignee:''}`,status:t.status,pct:t.pct||0,project:t.project});
+    }
+  });
+
+  // Search projects (unique)
+  const matchedProjects=new Set();
+  tasks.forEach(t=>{
+    if(t.project&&t.project.toLowerCase().includes(ql)&&!matchedProjects.has(t.project)){
+      matchedProjects.add(t.project);
+      const pts=tasks.filter(x=>x.project===t.project);
+      const avg=Math.round(pts.reduce((a,x)=>a+(x.pct||0),0)/pts.length);
+      results.unshift({type:'project',title:t.project,sub:`${pts.length} 個任務`,status:cs(avg),pct:avg,project:t.project});
+    }
+  });
+
+  // Search members
+  members.forEach(m=>{
+    if([m.name,m.role,m.note].some(f=>f&&f.toLowerCase().includes(ql))){
+      const cnt=tasks.filter(t=>t.assignee===m.name).length;
+      results.push({type:'member',name:m.name,title:m.name,sub:`${m.role||''}${m.role&&cnt?' · ':''}${cnt} 個任務`});
+    }
+  });
+
+  const box=$id('search-results');
+  if(!results.length){
+    box.innerHTML=`<div class="search-empty">找不到「${q}」相關結果</div>`;
+    box.classList.add('open');
+    return;
+  }
+
+  // Dedupe and limit
+  const seen=new Set();
+  const deduped=results.filter(r=>{
+    const key=r.type+r.title;
+    if(seen.has(key))return false;
+    seen.add(key);return true;
+  }).slice(0,12);
+
+  box.innerHTML=`<div class="search-results-header">找到 ${deduped.length} 個結果</div>`
+    + deduped.map(r=>{
+      if(r.type==='project') return`
+        <div class="search-result-item" onclick="searchGoProject('${r.project}')">
+          <div class="search-result-icon">📁</div>
+          <div class="search-result-main">
+            <div class="search-result-title">${highlight(r.title,q)}</div>
+            <div class="search-result-sub">${r.sub}</div>
+          </div>
+          <span class="search-result-badge ${sc(r.status)}">${r.status}</span>
+        </div>`;
+      if(r.type==='task') return`
+        <div class="search-result-item" onclick="searchGoTask('${r.id}','${r.project}')">
+          <div class="search-result-icon">✅</div>
+          <div class="search-result-main">
+            <div class="search-result-title">${highlight(r.title,q)}</div>
+            <div class="search-result-sub">${highlight(r.sub,q)}</div>
+          </div>
+          <span class="search-result-badge ${sc(r.status)}">${r.pct}%</span>
+        </div>`;
+      if(r.type==='member') return`
+        <div class="search-result-item" onclick="searchGoMember('${r.name}')">
+          <div class="search-result-icon"><span class="sb-av ${gav(r.name)}" style="width:20px;height:20px;font-size:9px;display:inline-flex;align-items:center;justify-content:center;border-radius:50%">${ini(r.name)}</span></div>
+          <div class="search-result-main">
+            <div class="search-result-title">${highlight(r.title,q)}</div>
+            <div class="search-result-sub">${highlight(r.sub,q)}</div>
+          </div>
+        </div>`;
+      return'';
+    }).join('');
+  box.classList.add('open');
+}
+
+window.searchGoProject=function(pname){
+  clearSearch();
+  openPDetail(pname);
+};
+window.searchGoTask=function(id,pname){
+  clearSearch();
+  openPDetail(pname);
+  setTimeout(()=>openModal(id),300);
+};
+window.searchGoMember=function(name){
+  clearSearch();
+  switchMember(name,null);
+};
+
+// Close search on outside click
+document.addEventListener('click',e=>{
+  if(!$id('search-wrap').contains(e.target)) $id('search-results').classList.remove('open');
+});
+// Keyboard: Escape closes, arrow keys navigate
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&$id('search-results').classList.contains('open')){
+    clearSearch();
+  }
+  if(e.key==='/'&&!e.target.matches('input,textarea,select')&&document.activeElement.id!=='search-input'){
+    e.preventDefault();
+    $id('search-input').focus();
+  }
+});
+
+// ── Delete task ──
+window.deleteTask=async function(){
+  if(!editId)return;if(!confirm('確定要刪除這筆記錄嗎？'))return;
+  try{await deleteDoc(docFn(db,'tasks',editId));toast('已刪除');closeModal();}
+  catch(e){alert('刪除失敗：'+e.message);}
+};
+// ── PWA Service Worker ──
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>
