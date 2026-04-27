@@ -133,7 +133,10 @@ select:focus,input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 
 .k-bar-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--accent),#4ade9a);}
 .k-pct{font-size:10px;font-weight:600;min-width:24px;text-align:right;color:var(--text-hint);}
 .k-footer{display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid var(--border);}
-.avatars{display:flex;}
+.avatars{display:flex;flex-direction:row-reverse;justify-content:flex-end;}
+.avatars .av{margin-left:-8px;border:2px solid var(--surface);transition:transform .15s;}
+.avatars .av:last-child{margin-left:0;}
+.avatars .av:hover{transform:translateY(-2px);z-index:1;}
 .av{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;border:2px solid var(--surface);margin-left:-5px;box-shadow:0 0 0 .5px rgba(0,0,0,.08);}
 .av:first-child{margin-left:0;}
 .due{font-size:10px;color:var(--text-hint);font-weight:500;}
@@ -306,7 +309,12 @@ select:focus,input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 
 .mt-block-desc { font-size: 11px; color: var(--text-hint); }
 .mt-block-count { font-size: 11px; font-weight: 600; background: var(--bg); border: 1px solid var(--border); border-radius: 20px; padding: 1px 8px; color: var(--text-muted); }
 .mt-row { display: flex; align-items: center; gap: 10px; padding: 9px 1.125rem; border-bottom: 1px solid var(--border); transition: background .1s; }
-.mt-row-cb { display:none; width:16px; height:16px; flex-shrink:0; accent-color:var(--accent); cursor:pointer; }
+.person-chip { display:inline-flex; align-items:center; gap:5px; padding:3px 8px 3px 6px; background:var(--accent-pill); color:var(--accent-pill-text); border-radius:20px; font-size:12px; font-weight:500; }
+.person-chip-rm { border:none; background:none; cursor:pointer; color:inherit; font-size:13px; line-height:1; padding:0; opacity:.7; }
+.person-chip-rm:hover { opacity:1; }
+/* Batch assign */
+.batch-assign-bar { display:none; padding:8px 1.125rem; background:rgba(26,143,104,.06); border:1px solid rgba(26,143,104,.2); border-radius:var(--radius-xs); margin:0 1.125rem 8px; align-items:center; gap:8px; flex-wrap:wrap; }
+.batch-assign-bar.show { display:flex; }
 .mt-select-mode .mt-row-cb { display:block; }
 .mt-select-mode .mt-row { cursor:pointer; }
 .mt-row.mt-selected { background:rgba(26,143,104,.08) !important; border-left:3px solid var(--accent); }
@@ -720,6 +728,14 @@ textarea.fc{resize:vertical;min-height:68px;}
         </div>
       </div>
       <div class="pd-stats" id="pd-stats"></div>
+      <div id="pd-batch-bar" class="batch-assign-bar">
+        <span id="pd-batch-count" style="font-size:12px;font-weight:500;color:var(--accent)">已選 0 項</span>
+        <select id="pd-batch-person" class="fc" style="font-size:12px;padding:4px 8px;width:auto">
+          <option value="">選擇負責人...</option>
+        </select>
+        <button class="btn btn-primary" style="font-size:12px;padding:4px 12px" onclick="doBatchAssign()">批次指派</button>
+        <button class="btn" style="font-size:12px;padding:4px 10px" onclick="clearPdSelection()">取消</button>
+      </div>
       <div class="list-wrap" id="pd-wrap"></div>
     </div>
 
@@ -787,9 +803,10 @@ textarea.fc{resize:vertical;min-height:68px;}
       </select>
     </div>
     <div class="fg">
-      <label class="flabel">負責人</label>
+      <label class="flabel">負責人 <span style="color:var(--text-hint);font-weight:400">（可多選）</span></label>
+      <div id="f-person-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px"></div>
       <div style="display:flex;gap:8px;align-items:center">
-        <select class="fc" id="f-person" style="flex:1"><option value="__new__">＋ 新增人員...</option></select>
+        <select class="fc" id="f-person" style="flex:1" onchange="addPersonChip()"><option value="">選擇人員...</option></select>
         <button class="btn" style="white-space:nowrap;flex-shrink:0;font-size:12px" onclick="showAddPersonInput()" type="button">＋ 新人員</button>
       </div>
     </div>
@@ -989,15 +1006,15 @@ function syncFilters(){
   // modal selects — only rebuild when modal is closed to avoid disrupting active selection
   const modalOpen=$id('overlay').classList.contains('open');
   if(!modalOpen){
-    setOpts('f-person',ps.map(x=>`<option>${x}</option>`).join('')+'<option value="__new__">＋ 新增人員...</option>',[]);
+    // Rebuild person select for chip UI (no __new__ at top, it's a separate button)
+    const fper=$id('f-person');
+    if(fper){fper.innerHTML='<option value="">選擇人員...</option>'+ps.map(x=>`<option>${x}</option>`).join('')+'<option value="__new__">＋ 新增人員...</option>';}
     rebuildProjectSelect(prs);
   } else {
-    // Just ensure new persons/projects appear without resetting current selection
     const fper=$id('f-person'),fproj=$id('f-project');
-    ps.forEach(p=>{if(![...fper.options].some(o=>o.value===p)){fper.add(new Option(p,p),fper.options.length-1);}});
-    prs.forEach(p=>{if(![...fproj.options].some(o=>o.value===p)){
-      // insert before __new__ option
-      const newOpt=$id('f-project').querySelector('option[value="__new__"]');
+    if(fper) ps.forEach(p=>{if(![...fper.options].some(o=>o.value===p)){fper.add(new Option(p,p),fper.options.length-1);}});
+    if(fproj) prs.forEach(p=>{if(![...fproj.options].some(o=>o.value===p)){
+      const newOpt=fproj.querySelector('option[value="__new__"]');
       fproj.insertBefore(new Option(p,p),newOpt);
     }});
   }
@@ -1073,7 +1090,7 @@ function renderKanban(pjs,grps){
 
   function kCard(pn){
     const ts=grps[pn]||[];
-    const asgns=[...new Set(ts.map(t=>t.assignee).filter(Boolean))];
+    const asgns=[...new Set(ts.flatMap(t=>(t.assignee||'').split(',').map(s=>s.trim())).filter(Boolean))];
     const avg=ts.length?Math.round(ts.reduce((a,t)=>a+(t.pct||0),0)/ts.length):0;
     const nd=ts.filter(t=>t.date).sort((a,b)=>new Date(a.date)-new Date(b.date))[0];
     const sid='ap_'+pn.replace(/[^\w]/g,'_').slice(0,20);
@@ -1099,8 +1116,14 @@ function renderKanban(pjs,grps){
               <button class="assign-btn" onclick="toggleAp(event,'${sid}')">指派 ▾</button>
               <div class="ap" id="${sid}">
                 <div class="ap-scope"><button class="ap-scope-btn active" onclick="setScope(event,'${sid}','all')">全部任務</button><button class="ap-scope-btn" onclick="setScope(event,'${sid}','new')">僅未指派</button></div>
-                <div class="ap-head">選擇負責人</div>
-                ${ps.map(p=>`<div class="ap-person" onclick="doAssign(event,'${pn}','${p}','${sid}')"><span class="sb-av ${gav(p)}">${ini(p)}</span>${p}</div>`).join('')}
+                <div class="ap-head">點選加入／再點移除</div>
+                ${ps.map(p=>{
+                  const assigned=ts.some(t=>(t.assignee||'').split(',').map(s=>s.trim()).includes(p));
+                  return`<div class="ap-person ${assigned?'cur':''}" onclick="toggleAssign(event,'${pn}','${p}','${sid}')">
+                    <span class="sb-av ${gav(p)}">${ini(p)}</span>${p}
+                    ${assigned?'<span style="margin-left:auto;font-size:11px;opacity:.6">✓</span>':''}
+                  </div>`;
+                }).join('')}
                 <div class="ap-person" style="color:var(--text-hint);font-size:12px" onclick="addPersonAssign(event,'${pn}','${sid}')">＋ 新增人員...</div>
               </div>
             </div>
@@ -1169,7 +1192,7 @@ function renderKanban(pjs,grps){
             ${fProjs.map(pn=>{
               const ts=grps[pn]||[];
               const avg=ts.length?Math.round(ts.reduce((a,t)=>a+(t.pct||0),0)/ts.length):0;
-              const asgns=[...new Set(ts.map(t=>t.assignee).filter(Boolean))];
+              const asgns=[...new Set(ts.flatMap(t=>(t.assignee||'').split(',').map(s=>s.trim())).filter(Boolean))];
               const nd=ts.filter(t=>t.date).sort((a,b)=>new Date(a.date)-new Date(b.date))[0];
               const isOv=nd&&ov(nd.date)&&avg<100;
               const dateStr=nd?(nd.date.slice(5).replace('-','/')):' — ';
@@ -1248,7 +1271,13 @@ function nameCell(t){return`<td><div class="lt-name"><div class="chk ${t.pct===1
 function pctCell(t){return`<td class="td-pct"><div class="pct-inner"><div class="pct-bar"><div class="pct-fill" style="width:${t.pct||0}%"></div></div><span class="pct-num">${t.pct||0}%</span></div></td>`;}
 function dateCell(t){return`<td class="td-date ${ov(t.date)&&t.pct<100?'overdue':''}">${t.date||'—'}</td>`;}
 function projCell(t){return`<td class="td-proj">${t.project?`<span class="proj-pill">◎ ${t.project}</span>`:''}</td>`;}
-function personCell(t){return`<td class="td-person">${t.assignee?`<div class="sb-av ${gav(t.assignee)}" title="${t.assignee}" style="width:22px;height:22px">${ini(t.assignee)}</div>`:''}</td>`;}
+function personCell(t){
+  if(!t.assignee) return`<td class="td-person"></td>`;
+  const names=t.assignee.split(',').map(s=>s.trim()).filter(Boolean);
+  return`<td class="td-person"><div class="avatars" style="flex-direction:row;">${
+    names.slice(0,3).map(n=>`<div class="av ${gav(n)}" title="${n}" style="width:22px;height:22px;font-size:9px;border:2px solid var(--surface);margin-left:-6px;flex-shrink:0">${ini(n)}</div>`).join('')
+    }${names.length>3?`<div class="av" style="width:22px;height:22px;font-size:8px;background:var(--bg);margin-left:-6px">+${names.length-3}</div>`:''}</div></td>`;
+}
 
 function mkSection(sid,title,count,rows,addLabel,addFn){
   const col=collapsed[sid];
@@ -1631,7 +1660,7 @@ function renderPDetail(){
     statusCounts['審核中']>0?'審核中':
     ts.length>0?'待辦':'待辦';
   const doneCount=ts.filter(t=>t.status==='完成'||t.pct===100).length;
-  const assignees=[...new Set(ts.map(t=>t.assignee).filter(Boolean))];
+  const assignees=[...new Set(ts.flatMap(t=>(t.assignee||'').split(',').map(s=>s.trim())).filter(Boolean))];
   const now=new Date(),nw=new Date();nw.setDate(now.getDate()+7);
   const dueCount=ts.filter(t=>t.date&&new Date(t.date)<=nw&&t.pct<100).length;
 
@@ -1671,13 +1700,21 @@ function renderPDetail(){
   </div>`;
 
   const allPs=persons();
+  // Update batch assign person select
+  const batchSel=$id('pd-batch-person');
+  if(batchSel){batchSel.innerHTML='<option value="">選擇負責人...</option>'+allPs.map(p=>`<option>${p}</option>`).join('');}
   const rows=ts.length?ts.map(t=>{
     const phaseColor=PHASE_COLORS[t.task]||'var(--border-strong)';
     const isOv=ov(t.date)&&t.pct<100;
     const projOpts=`${t.assignee?`<div class="iproj-opt" data-proj="" data-id="${t.id}" style="color:var(--text-hint)">✕ 移除</div>`:''}
       ${allPs.map(p=>`<div class="iproj-opt ${t.assignee===p?'cur':''}" data-proj="${p}" data-id="${t.id}">${t.assignee===p?'✓ ':''} ${p}</div>`).join('')}`;
     return`<tr data-id="${t.id}">
-      <td><div class="lt-name" style="padding-left:6px">
+      <td style="width:32px;padding:0 4px 0 8px;vertical-align:middle">
+        <input type="checkbox" class="pd-row-cb" data-id="${t.id}"
+          style="width:15px;height:15px;accent-color:var(--accent);cursor:pointer"
+          onchange="pdCbChange(this)">
+      </td>
+      <td><div class="lt-name" style="padding-left:4px">
         <div class="chk ${t.pct===100?'done':''}" data-id="${t.id}" data-pct="${t.pct||0}" onclick="quickToggle('${t.id}',${t.pct||0})"></div>
         <span class="pd-phase-dot" style="background:${phaseColor}" title="${t.task||''}"></span>
         <div style="flex:1;min-width:0">
@@ -1704,7 +1741,7 @@ function renderPDetail(){
         <div class="iproj-wrap">
           ${t.assignee
             ?`<button class="iproj-btn" data-id="${t.id}" style="font-size:11px">
-                <span class="sb-av ${gav(t.assignee)}" style="width:18px;height:18px;font-size:9px">${ini(t.assignee)}</span>
+                <div class="avatars" style="flex-direction:row;margin-right:2px">${(t.assignee||'').split(',').map(s=>s.trim()).filter(Boolean).slice(0,3).map(n=>`<span class="av ${gav(n)}" style="width:18px;height:18px;font-size:8px;border:1.5px solid var(--surface);margin-left:-5px;flex-shrink:0">${ini(n)}</span>`).join('')}</div>
                 ${t.assignee}</button>`
             :`<span class="iproj-none" data-id="${t.id}" style="font-size:11px">＋ 指派</span>`}
           <div class="iproj-dd" id="iproj_${t.id}">${projOpts}</div>
@@ -1898,7 +1935,7 @@ function renderFolderDetail(){
     body.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px;padding-top:4px">`
       +fProjs.map(pn=>{
         const ts=grps[pn]||[];
-        const asgns=[...new Set(ts.map(t=>t.assignee).filter(Boolean))];
+        const asgns=[...new Set(ts.flatMap(t=>(t.assignee||'').split(',').map(s=>s.trim())).filter(Boolean))];
         const avg2=ts.length?Math.round(ts.reduce((a,t)=>a+(t.pct||0),0)/ts.length):0;
         const nd=ts.filter(t=>t.date).sort((a,b)=>new Date(a.date)-new Date(b.date))[0];
         return`<div class="k-card" draggable="true"
@@ -1932,7 +1969,7 @@ function renderFolderDetail(){
       ${fProjs.map(pn=>{
         const ts=grps[pn]||[];
         const avg2=ts.length?Math.round(ts.reduce((a,t)=>a+(t.pct||0),0)/ts.length):0;
-        const asgns=[...new Set(ts.map(t=>t.assignee).filter(Boolean))];
+        const asgns=[...new Set(ts.flatMap(t=>(t.assignee||'').split(',').map(s=>s.trim())).filter(Boolean))];
         const nd=ts.filter(t=>t.date).sort((a,b)=>new Date(a.date)-new Date(b.date))[0];
         const isOv=nd&&ov(nd.date)&&avg2<100;
         return`<div class="flist-row" onclick="openPDetail('${pn}')">
@@ -2136,16 +2173,14 @@ window.openModal=function(id=null){
   const pct=t?.pct??0;
   $id('f-pct').value=pct;$id('f-pct-lbl').textContent=pct+'%';
   $id('f-status').value=t?.status||'待辦';
-  const per=$id('f-person');
-  if(t&&t.assignee){
-    if(![...per.options].some(o=>o.value===t.assignee))per.add(new Option(t.assignee,t.assignee),0);
-    per.value=t.assignee;
-  } else {
-    // 新增時預設第一位人員，若沒有人員才顯示新增輸入框
-    const firstPerson=[...per.options].find(o=>o.value!=='__new__');
-    per.value=firstPerson?firstPerson.value:'__new__';
+  // Load persons into chips (support comma-separated)
+  selectedPersons=new Set();
+  if(t?.assignee){
+    t.assignee.split(',').map(s=>s.trim()).filter(Boolean).forEach(p=>selectedPersons.add(p));
   }
-  $id('new-person-g').style.display=per.value==='__new__'?'':'none';
+  renderPersonChips();
+  $id('f-person').value='';
+  $id('new-person-g').style.display='none';
   $id('f-new-person').value='';
   $id('f-date').value=t?.date||'';$id('f-note').value=t?.note||'';
   $id('overlay').classList.add('open');
@@ -2186,8 +2221,11 @@ window.saveTask=async function(){
   }
   const task=$id('f-task').value.trim();if(!task){alert('請填寫工作項目描述');return;}
   const pct=parseInt($id('f-pct').value)||0;
-  let assignee=$id('f-person').value;
-  if(assignee==='__new__'){assignee=$id('f-new-person').value.trim();if(!assignee){alert('請輸入負責人姓名');return;}}
+  // Collect assignees from chips + new person input
+  let newPerson=$id('f-new-person').value.trim();
+  if(newPerson) selectedPersons.add(newPerson);
+  if(selectedPersons.size===0){alert('請至少選擇一位負責人');return;}
+  const assignee=[...selectedPersons].join(',');
   const date=$id('f-date').value,note=$id('f-note').value.trim();
   const status=$id('f-status').value;
   const payload={project,task,pct,assignee,date,note,status,updatedAt:sts()};
@@ -2247,16 +2285,41 @@ window.setScope=function(e,sid,scope){
     btn.classList.toggle('active', btn.textContent.trim()===(scope==='all'?'全部任務':'僅未指派'));
   });
 };
+window.toggleAssign=async function(e,pn,person,sid){
+  e.stopPropagation();
+  const scope=apScopes[sid]||'all';
+  const tgts=tasks.filter(t=>t.project===pn&&(scope==='all'||!t.assignee));
+  if(!tgts.length){toast('沒有符合條件的任務');return;}
+  // Check if already assigned to all targets
+  const allAssigned=tgts.every(t=>(t.assignee||'').split(',').map(s=>s.trim()).includes(person));
+  try{
+    await Promise.all(tgts.map(t=>{
+      let names=(t.assignee||'').split(',').map(s=>s.trim()).filter(Boolean);
+      if(allAssigned){
+        names=names.filter(n=>n!==person); // remove
+      } else {
+        if(!names.includes(person)) names.push(person); // add
+      }
+      return updateDoc(docFn(db,'tasks',t.id),{assignee:names.join(','),updatedAt:sts()});
+    }));
+    toast(allAssigned?`已移除 ${person}`:`已加入 ${person} ✓`);
+  }catch(err){alert('指派失敗：'+err.message);}
+};
+
 window.doAssign=async function(e,pn,person,sid){
   e.stopPropagation();
   const scope=apScopes[sid]||'all';
   const tgts=tasks.filter(t=>t.project===pn&&(scope==='all'||!t.assignee));
   if(!tgts.length){toast('沒有符合條件的任務');return;}
   try{
-    await Promise.all(tgts.map(t=>updateDoc(docFn(db,'tasks',t.id),{assignee:person,updatedAt:sts()})));
-    toast(`已將 ${tgts.length} 個任務指派給 ${person} ✓`);
-    const popup=$id(sid);
-    if(popup) popup.classList.remove('open');
+    await Promise.all(tgts.map(t=>{
+      // Merge with existing assignees (comma-separated)
+      const existing=(t.assignee||'').split(',').map(s=>s.trim()).filter(Boolean);
+      if(!existing.includes(person)) existing.push(person);
+      return updateDoc(docFn(db,'tasks',t.id),{assignee:existing.join(','),updatedAt:sts()});
+    }));
+    toast(`已將 ${tgts.length} 個任務加入 ${person} ✓`);
+    const popup=$id(sid);if(popup) popup.classList.remove('open');
   }catch(err){alert('指派失敗：'+err.message);}
 };
 window.addPersonAssign=function(e,pn,sid){
@@ -2711,6 +2774,74 @@ window.dropToUncat=async function(e){
     if(removes.length) toast('已移出資料夾');
   }catch(err){alert('移動失敗：'+err.message);}
   draggedProject=null;
+};
+
+// ── Multi-person chips in modal ──
+let selectedPersons=new Set();
+
+function renderPersonChips(){
+  const wrap=$id('f-person-chips');
+  if(!wrap) return;
+  wrap.innerHTML=[...selectedPersons].map(p=>`
+    <span class="person-chip">
+      <span class="av ${gav(p)}" style="width:18px;height:18px;font-size:8px;display:inline-flex;align-items:center;justify-content:center;border-radius:50%">${ini(p)}</span>
+      ${p}
+      <button class="person-chip-rm" onclick="removePersonChip('${p}')" type="button">×</button>
+    </span>`).join('');
+}
+
+window.addPersonChip=function(){
+  const sel=$id('f-person');
+  const val=sel.value;
+  if(!val||val==='__new__') return;
+  selectedPersons.add(val);
+  sel.value='';
+  renderPersonChips();
+};
+
+window.removePersonChip=function(name){
+  selectedPersons.delete(name);
+  renderPersonChips();
+};
+
+// ── Batch assign in project detail ──
+const pdSelected=new Set();
+
+window.pdCbChange=function(cb){
+  const id=cb.dataset.id;
+  const row=cb.closest('tr');
+  if(cb.checked){
+    pdSelected.add(id);
+    row?.style.setProperty('background','rgba(26,143,104,.06)');
+  } else {
+    pdSelected.delete(id);
+    row?.style.removeProperty('background');
+  }
+  const bar=$id('pd-batch-bar');
+  const cnt=$id('pd-batch-count');
+  if(bar) bar.classList.toggle('show', pdSelected.size>0);
+  if(cnt) cnt.textContent=`已選 ${pdSelected.size} 項`;
+};
+
+window.clearPdSelection=function(){
+  pdSelected.clear();
+  document.querySelectorAll('.pd-row-cb').forEach(cb=>{cb.checked=false;});
+  document.querySelectorAll('#pd-wrap tr').forEach(r=>r.style.removeProperty('background'));
+  const bar=$id('pd-batch-bar');
+  if(bar) bar.classList.remove('show');
+};
+
+window.doBatchAssign=async function(){
+  if(!pdSelected.size){alert('請先勾選任務');return;}
+  const person=$id('pd-batch-person')?.value;
+  if(!person){alert('請選擇負責人');return;}
+  try{
+    await Promise.all([...pdSelected].map(id=>
+      updateDoc(docFn(db,'tasks',id),{assignee:person,updatedAt:sts()})
+    ));
+    toast(`已將 ${pdSelected.size} 個任務指派給 ${person} ✓`);
+    clearPdSelection();
+  }catch(e){alert('指派失敗：'+e.message);}
 };
 
 // ── Done block multi-select delete ──
