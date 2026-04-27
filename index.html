@@ -1117,18 +1117,11 @@ function renderKanban(pjs,grps){
           ${nd?`<div class="due ${ov(nd.date)&&nd.pct<100?'overdue':''}">到期 ${nd.date}</div>`:''}
           <div style="display:flex;gap:4px">
             <div class="ap-wrap">
-              <button class="assign-btn" onclick="toggleAp(event,'${sid}')">指派 ▾</button>
-              <div class="ap" id="${sid}">
-                <div class="ap-scope"><button class="ap-scope-btn active" onclick="setScope(event,'${sid}','all')">全部任務</button><button class="ap-scope-btn" onclick="setScope(event,'${sid}','new')">僅未指派</button></div>
+              <button class="assign-btn" onclick="toggleAp(event,'${sid}','${pn}')">指派 ▾</button>
+              <div class="ap" id="${sid}" data-pn="${pn}">
+                <div class="ap-scope"><button class="ap-scope-btn active" onclick="setScope(event,'${sid}','all','${pn}')">全部任務</button><button class="ap-scope-btn" onclick="setScope(event,'${sid}','new','${pn}')">僅未指派</button></div>
                 <div class="ap-head">點選加入／再點移除</div>
-                ${ps.map(p=>{
-                  const assigned=ts.some(t=>(t.assignee||'').split(',').map(s=>s.trim()).includes(p));
-                  return`<div class="ap-person ${assigned?'cur':''}" onclick="toggleAssign(event,'${pn}','${p}','${sid}')">
-                    <span class="sb-av ${gav(p)}">${ini(p)}</span>${p}
-                    ${assigned?'<span style="margin-left:auto;font-size:11px;opacity:.6">✓</span>':''}
-                  </div>`;
-                }).join('')}
-                <div class="ap-person" style="color:var(--text-hint);font-size:12px" onclick="addPersonAssign(event,'${pn}','${sid}')">＋ 新增人員...</div>
+                <div class="ap-list"></div>
               </div>
             </div>
             <div class="ap-wrap">
@@ -2273,23 +2266,42 @@ window.selectTask=function(el){
 };
 
 // ── Assign ──
-window.toggleAp=function(e,sid){
+window.toggleAp=function(e,sid,pn){
   e.stopPropagation();
-  const el=$id(sid);
-  if(!el) return;
+  const el=$id(sid);if(!el) return;
   const was=el.classList.contains('open');
   document.querySelectorAll('.ap.open').forEach(p=>p.classList.remove('open'));
-  if(!was) el.classList.add('open');
+  if(!was){
+    refreshApList(sid, pn||el.dataset.pn);
+    el.classList.add('open');
+  }
 };
-window.setScope=function(e,sid,scope){
+
+function refreshApList(sid, pn){
+  const popup=$id(sid);if(!popup||!pn) return;
+  const listEl=popup.querySelector('.ap-list');if(!listEl) return;
+  const ps=persons();
+  const ts=tasks.filter(t=>t.project===pn);
+  const scope=apScopes[sid]||'all';
+  const tgts=ts.filter(t=>scope==='all'||!t.assignee);
+  listEl.innerHTML=ps.map(p=>{
+    const assignedAll=tgts.length>0&&tgts.every(t=>(t.assignee||'').split(',').map(s=>s.trim()).includes(p));
+    const assignedSome=tgts.some(t=>(t.assignee||'').split(',').map(s=>s.trim()).includes(p));
+    return`<div class="ap-person ${assignedAll?'cur':''}" onclick="toggleAssign(event,'${pn}','${p}','${sid}')">
+      <span class="sb-av ${gav(p)}">${ini(p)}</span>${p}
+      <span style="margin-left:auto;font-size:11px">${assignedAll?'✓':assignedSome?'–':''}</span>
+    </div>`;
+  }).join('')+`<div class="ap-person" style="color:var(--text-hint);font-size:12px" onclick="addPersonAssign(event,'${pn}','${sid}')">＋ 新增人員...</div>`;
+}
+
+window.setScope=function(e,sid,scope,pn){
   e.stopPropagation();
   apScopes[sid]=scope;
-  // find buttons within the same popup, don't rely on global id
-  const popup=$id(sid);
-  if(!popup) return;
+  const popup=$id(sid);if(!popup) return;
   popup.querySelectorAll('.ap-scope-btn').forEach(btn=>{
     btn.classList.toggle('active', btn.textContent.trim()===(scope==='all'?'全部任務':'僅未指派'));
   });
+  refreshApList(sid, pn||popup.dataset.pn);
 };
 window.toggleAssign=async function(e,pn,person,sid){
   e.stopPropagation();
@@ -2309,6 +2321,8 @@ window.toggleAssign=async function(e,pn,person,sid){
       return updateDoc(docFn(db,'tasks',t.id),{assignee:names.join(','),updatedAt:sts()});
     }));
     toast(allAssigned?`已移除 ${person}`:`已加入 ${person} ✓`);
+    // Refresh popup to show updated checkmarks
+    refreshApList(sid, pn);
   }catch(err){alert('指派失敗：'+err.message);}
 };
 
