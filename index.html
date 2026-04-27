@@ -927,6 +927,10 @@ function $id(i){return document.getElementById(i);}
   },e=>console.error(e));
   fs.onSnapshot(memberCol,snap=>{
     members=snap.docs.map(d=>({id:d.id,...d.data()}));
+    // Auto-cleanup: delete any member whose name contains a comma (was mistakenly created from multi-assignee string)
+    members.filter(m=>m.name&&m.name.includes(',')).forEach(async m=>{
+      try{await deleteDoc(docFn(db,'members',m.id));}catch(e){}
+    });
     syncFilters();
     if(nav==='members') renderMembersPage();
   },e=>console.error(e));
@@ -939,7 +943,7 @@ function $id(i){return document.getElementById(i);}
 // persons() merges members collection with task assignees for backward compat
 function persons(){
   const fromMembers=members.map(m=>m.name).filter(Boolean);
-  const fromTasks=[...new Set(tasks.map(t=>t.assignee).filter(Boolean))];
+  const fromTasks=[...new Set(tasks.flatMap(t=>(t.assignee||'').split(',').map(s=>s.trim())).filter(Boolean))];
   return [...new Set([...fromMembers,...fromTasks])].sort();
 }
 function projects(){return[...new Set(tasks.map(t=>t.project).filter(Boolean))].sort();}
@@ -2242,10 +2246,12 @@ window.saveTask=async function(){
       $id('f-new-proj-client').value='';
       $id('f-new-proj-addr').value='';
     }
-    // Auto-add new person to members collection if not already there
-    if(assignee&&!members.find(m=>m.name===assignee)){
-      await addDoc(memberCol,{name:assignee,role:'',note:'',createdAt:sts()});
-    }
+    // Auto-add each new person to members collection if not already there
+    [...selectedPersons].forEach(async name=>{
+      if(name&&!name.includes(',')&&!members.find(m=>m.name===name)){
+        try{await addDoc(memberCol,{name,role:'',note:'',createdAt:sts()});}catch(e){}
+      }
+    });
     closeModal();
   }catch(e){alert('儲存失敗：'+e.message);}
 };
