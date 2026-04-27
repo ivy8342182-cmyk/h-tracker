@@ -1,4 +1,4 @@
-const CACHE = 'h-tracker-v1';
+const CACHE = 'h-tracker-v2';
 const ASSETS = [
   './',
   './index.html',
