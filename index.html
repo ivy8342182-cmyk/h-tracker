@@ -1528,7 +1528,7 @@ window.renderMyTasks=function(){
     </div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px" id="mt-blocks-row">
-      <div id="mtb_week">${block('week','📅','本週工作內容',weekLabel,weekTs,`openModalPre('person','${person}','${nws}')`)}</div>
+      <div id="mtb_week">${block('week','📅','本週工作內容',weekLabel,[...overdue,...todayTs,...weekTs],`openModalPre('person','${person}','${nws}')`)}</div>
       <div id="mtb_later">${block('later','🗂','待處理','尚未設定日期的任務',laterTs,`openModalPre('person','${person}','')`,true)}</div>
     </div>
     ${doneTs.length?`<div class="mt-block mt-block-full" id="mtb_done">
