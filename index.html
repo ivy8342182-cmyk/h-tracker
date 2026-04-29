@@ -515,8 +515,13 @@ textarea.fc{resize:vertical;min-height:68px;}
   #mt-blocks-row{grid-template-columns:1fr !important;}
   .mt-summary-row{grid-template-columns:1fr 1fr !important;}
   .header{padding:0 .75rem;}
-  .search-input{width:140px !important;}
-  .search-input:focus{width:180px !important;}
+  .brand-name{display:none;}
+  .brand-sub{display:none;}
+  .sync-status{display:none;}
+  .new-btn-text{display:none;}
+  .new-btn-short{display:inline !important;}
+  .search-input{width:160px !important;}
+  .search-input:focus{width:190px !important;}
   .brand-sub{display:none;}
   .stats{padding:0 .875rem;}
 }
@@ -548,7 +553,7 @@ textarea.fc{resize:vertical;min-height:68px;}
       <div class="sync-dot" id="sync-dot"></div>
       <span id="sync-text">連線中...</span>
     </div>
-    <button class="btn btn-primary" onclick="openModal()">＋ 新增進度</button>
+    <button class="btn btn-primary" onclick="openModal()"><span class="new-btn-text">＋ 新增進度</span><span class="new-btn-short" style="display:none">＋</span></button>
   </div>
 </header>
 
