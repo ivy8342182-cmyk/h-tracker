@@ -292,8 +292,10 @@ select:focus,input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 
 
 /* ── My Tasks weekly dashboard ── */
 .mt-dashboard { padding: 1.25rem 2rem 2rem; display: flex; flex-direction: column; gap: 1.5rem; }
-.mt-summary-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-.mt-stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: .875rem 1rem; position: relative; overflow: hidden; }
+.mt-summary-row { display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 10px; }
+.mt-stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: .875rem 1rem; position: relative; overflow: hidden; transition: box-shadow .15s, transform .15s; }
+.mt-stat:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+.mt-stat-inner:hover { background: var(--surface-2); }
 .mt-stat-accent { position: absolute; top: 0; left: 0; width: 3px; height: 100%; }
 .mt-stat-label { font-size: 10px; font-weight: 600; color: var(--text-hint); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 5px; }
 .mt-stat-value { font-size: 22px; font-weight: 600; letter-spacing: -.03em; line-height: 1; }
@@ -506,6 +508,8 @@ textarea.fc{resize:vertical;min-height:68px;}
   .c-header,.toolbar,.list-wrap,.kanban{padding-left:1rem;padding-right:1rem;}
   .cal-panel{display:none;}
   .cal-panel.mobile-show{display:flex;position:fixed;inset:0;z-index:150;border-radius:0;}
+  #mt-blocks-row{grid-template-columns:1fr !important;}
+  .mt-summary-row{grid-template-columns:1fr !important;}
 }
 @media(min-width:701px){
   .hamburger{display:none;}
@@ -1003,7 +1007,7 @@ function syncFilters(){
     const curPerson=$id('mt-person').value;
     bar.innerHTML=`<span class="mt-person-bar-label">人員</span>`
       + ps.map(p=>`
-        <button class="person-chip ${curPerson===p?'active':''}" onclick="selectMtPerson('${p}')">
+        <button class="person-chip ${curPerson===p?'active':''}" data-name="${p}" onclick="selectMtPerson('${p}')">
           <span class="chip-av ${gav(p)}">${ini(p)}</span>
           ${p}
         </button>`).join('');
@@ -1024,7 +1028,7 @@ function syncFilters(){
     }});
   }
   // sidebar persons
-  $id('sb-persons').innerHTML=ps.map(p=>`<button class="sb-btn ${curMember===p?'active':''}" onclick="switchMember('${p}',this)"><span class="sb-av ${gav(p)}">${ini(p)}</span>${p}</button>`).join('');
+  $id('sb-persons').innerHTML=ps.map(p=>`<button class="sb-btn ${curMember===p?'active':''}" onclick="goToMemberTasks('${p}')"><span class="sb-av ${gav(p)}">${ini(p)}</span>${p}</button>`).join('');
 }
 
 function renderAll(){
@@ -1045,6 +1049,39 @@ window.switchNav=function(n,el){
   ['project','mytasks','member','pdetail','members','calendar','folder'].forEach(v=>$id('view-'+v).style.display=v===n?'':'none');
   renderAll();
 };
+window.scrollToMtBlock=function(id){
+  const target=$id(id);
+  if(!target) return;
+  const container=document.querySelector('.content');
+  if(!container){target.scrollIntoView({behavior:'smooth'});return;}
+  const containerTop=container.getBoundingClientRect().top;
+  const targetTop=target.getBoundingClientRect().top;
+  const offset=targetTop-containerTop+container.scrollTop-16;
+  container.scrollTo({top:offset,behavior:'smooth'});
+};
+
+window.goToMemberTasks=function(name){
+  nav='mytasks';
+  window._curMtPerson=name;
+  document.querySelectorAll('.sb-btn,.sb-folder-item').forEach(e=>e.classList.remove('active'));
+  ['project','mytasks','member','pdetail','members','calendar','folder'].forEach(v=>{
+    $id('view-'+v).style.display=v==='mytasks'?'':'none';
+  });
+  // Try to set select value (may fail if options not yet built)
+  const sel=$id('mt-person');
+  if(sel) sel.value=name;
+  // Rebuild chips with correct active state
+  const ps=persons();
+  const bar=$id('mt-person-bar');
+  if(bar){
+    bar.innerHTML=`<span class="mt-person-bar-label">人員</span>`
+      +ps.map(p=>`<button class="person-chip ${p===name?'active':''}" data-name="${p}" onclick="selectMtPerson('${p}')">
+        <span class="chip-av ${gav(p)}">${ini(p)}</span>${p}
+      </button>`).join('');
+  }
+  renderMyTasks();
+};
+
 window.switchMember=function(name,el){
   curMember=name;nav='member';
   document.querySelectorAll('.sb-btn').forEach(e=>e.classList.remove('active'));
@@ -1065,7 +1102,7 @@ window.switchCtab=function(t,el){
 // ── Filtered ──
 function filtered(){
   const fp=$id('fp').value,fs=$id('fs').value,fpr=$id('fpr').value;
-  return tasks.filter(t=>(!fp||t.assignee===fp)&&(!fs||t.status===fs)&&(!fpr||t.project===fpr));
+  return tasks.filter(t=>(!fp||(t.assignee||'').split(',').map(s=>s.trim()).includes(fp))&&(!fs||t.status===fs)&&(!fpr||t.project===fpr));
 }
 
 // ── Project view ──
@@ -1296,38 +1333,46 @@ function renderProjList(pjs,grps){
   const wrap=$id('proj-list');
   if(!pjs.length){wrap.innerHTML='<div class="empty"><p>沒有符合條件的任務</p></div>';return;}
   wrap.innerHTML=pjs.map(pn=>{
-    const ts=grps[pn],sid='pl_'+pn.replace(/\W/g,'_');
+    const ts=grps[pn]||[],sid='pl_'+pn.replace(/\W/g,'_');
+    const meta=projectMeta[pn]||{};
+    const metaInfo=meta.client||meta.address?`
+      <div style="display:flex;gap:16px;padding:6px 1rem 8px;background:var(--surface-2);border-bottom:1px solid var(--border);flex-wrap:wrap">
+        ${meta.client?`<span style="font-size:11px;color:var(--text-hint)">👤 ${meta.client}</span>`:''}
+        ${meta.address?`<span style="font-size:11px;color:var(--text-hint)">📍 ${meta.address}</span>`:''}
+      </div>`:'';
     const rows=listTable(ts,[
       {label:'任務名稱',render:nameCell},
       {label:'完成度',render:pctCell},
       {label:'負責人',render:personCell},
       {label:'截止日期',render:dateCell},
+      {label:'狀態',render:t=>`<td><span class="badge ${sc(t.status||'待辦')}" style="font-size:10px">${t.status||'待辦'}</span></td>`},
     ]);
-    return mkSection(sid,pn,ts.length,rows,'新增任務',`openModalPre('project','${pn}')`);
+    return mkSection(sid,pn,ts.length,metaInfo+rows,'新增任務',`openModalPre('project','${pn}')`);
   }).join('');
   pjs.forEach(pn=>{const sid='pl_'+pn.replace(/\W/g,'_');if(collapsed[sid])$id(sid).style.display='none';});
 }
 
 window.selectMtPerson=function(name){
+  window._curMtPerson=name;
   $id('mt-person').value=name;
-  // update chip active state
   document.querySelectorAll('.person-chip').forEach(c=>{
-    c.classList.toggle('active', c.textContent.trim()===name);
+    c.classList.toggle('active', c.dataset.name===name);
   });
   renderMyTasks();
 };
 
 // ── My Tasks — Weekly Dashboard ──
 window.renderMyTasks=function(){
-  const person=$id('mt-person').value;
-  $id('mt-title').textContent=person?person+' 的工作進度':'我的任務';
+  const person=$id('mt-person').value||window._curMtPerson||'';
+  if(window._curMtPerson&&!$id('mt-person').value) $id('mt-person').value=person;
+  $id('mt-title').textContent=person?person+' 的工作進度':'工作進度';
   const wrap=$id('mt-wrap');
   if(!person){
     wrap.innerHTML='<div class="empty" style="padding-top:3rem"><div style="font-size:28px">👆</div><p style="margin-top:8px">請從上方選擇人員</p></div>';
     return;
   }
 
-  const my=tasks.filter(t=>t.assignee===person);
+  const my=tasks.filter(t=>(t.assignee||'').split(',').map(s=>s.trim()).includes(person));
   const now=new Date();
   const tod=now.toISOString().split('T')[0];
   const nw=new Date(); nw.setDate(now.getDate()+7);
@@ -1337,15 +1382,17 @@ window.renderMyTasks=function(){
   const wks=wkStart.toISOString().split('T')[0];
 
   // ── Groups ──
-  const overdue   = my.filter(t=>t.pct<100&&t.date&&t.date<tod);
-  const todayTs   = my.filter(t=>t.pct<100&&t.date===tod);
-  const weekTs    = my.filter(t=>t.pct<100&&t.date>tod&&t.date<=nws);
-  const laterTs   = my.filter(t=>t.pct<100&&!t.date);
-  const doneTs    = my.filter(t=>t.pct===100);
+  const isComplete=t=>t.status==='完成'||t.pct===100;
+  const overdue   = my.filter(t=>!isComplete(t)&&t.date&&t.date<tod);
+  const todayTs   = my.filter(t=>!isComplete(t)&&t.date===tod);
+  const weekTs    = my.filter(t=>!isComplete(t)&&t.date>tod&&t.date<=nws);
+  const laterTs   = my.filter(t=>!isComplete(t)&&!t.date);
+  const doneTs    = my.filter(t=>isComplete(t));
   // this week = today + week (for summary)
   const thisWeekAll=[...todayTs,...weekTs,...overdue];
   const avgWeekPct= thisWeekAll.length ? Math.round(thisWeekAll.reduce((a,t)=>a+(t.pct||0),0)/thisWeekAll.length) : 0;
-  const weekDoneCount= my.filter(t=>t.pct===100&&t.date&&t.date>=wks&&t.date<=nws).length;
+  const weekDoneCount=my.filter(t=>t.status==='完成'||t.pct===100).length;
+  const allDoneCount=my.filter(t=>t.status==='完成'||t.pct===100).length;
 
   // ── Day label ──
   const dayNames=['日','一','二','三','四','五','六'];
@@ -1435,29 +1482,29 @@ window.renderMyTasks=function(){
       <button class="btn" style="font-size:11px;padding:4px 10px" onclick="toggleMtOverdue()">查看逾期</button>
     </div>`:''}
 
-    <div class="mt-summary-row">
-      <div class="mt-stat">
+    <div class="mt-summary-row" style="grid-template-columns:1fr 2fr 1fr">
+      <div class="mt-stat" style="cursor:pointer" data-scroll="mtb_week">
         <div class="mt-stat-accent" style="background:#1a8f68"></div>
         <div class="mt-stat-label">本週平均進度</div>
         <div class="mt-stat-value" style="color:var(--accent)">${avgWeekPct}%</div>
         <div class="mt-stat-sub">${thisWeekAll.length} 個進行中任務</div>
       </div>
-      <div class="mt-stat">
-        <div class="mt-stat-accent" style="background:#3b82f6"></div>
-        <div class="mt-stat-label">今日執行</div>
-        <div class="mt-stat-value" style="color:#3b82f6">${todayTs.length}</div>
-        <div class="mt-stat-sub">個截止任務</div>
+      <div class="mt-stat" style="padding:0;overflow:hidden;display:flex">
+        <div style="flex:1;padding:.875rem 1rem;cursor:pointer;border-right:1px solid var(--border);border-left:3px solid #8b5cf6" data-scroll="mtb_week" class="mt-stat-inner">
+          <div class="mt-stat-label">本週工作項目</div>
+          <div class="mt-stat-value" style="color:#8b5cf6">${weekTs.length+todayTs.length}</div>
+          <div class="mt-stat-sub">${weekLabel}</div>
+        </div>
+        <div style="flex:1;padding:.875rem 1rem;cursor:pointer" data-scroll="mtb_later" class="mt-stat-inner">
+          <div class="mt-stat-label">待處理</div>
+          <div class="mt-stat-value" style="color:#f59e0b">${laterTs.length}</div>
+          <div class="mt-stat-sub">尚未設定日期</div>
+        </div>
       </div>
-      <div class="mt-stat">
-        <div class="mt-stat-accent" style="background:#8b5cf6"></div>
-        <div class="mt-stat-label">本週工作項目</div>
-        <div class="mt-stat-value" style="color:#8b5cf6">${weekTs.length+todayTs.length}</div>
-        <div class="mt-stat-sub">${weekLabel}</div>
-      </div>
-      <div class="mt-stat">
+      <div class="mt-stat" style="cursor:pointer" data-scroll="mtb_done">
         <div class="mt-stat-accent" style="background:#10b981"></div>
-        <div class="mt-stat-label">本週已完成</div>
-        <div class="mt-stat-value" style="color:#10b981">${weekDoneCount}</div>
+        <div class="mt-stat-label">已完成</div>
+        <div class="mt-stat-value" style="color:#10b981">${allDoneCount}</div>
         <div class="mt-stat-sub">個任務完成</div>
       </div>
     </div>
@@ -1466,12 +1513,10 @@ window.renderMyTasks=function(){
       ${block('ov','⚠','逾期未完成','請立即處理或調整截止日期',overdue,`openModalPre('person','${person}','${tod}')`,true)}
     </div>
 
-    <div class="mt-blocks">
-      ${block('today','📌','今天執行',todayLabel,todayTs,`openModalPre('person','${person}','${tod}')`)}
-      ${block('week','📅','本週工作內容',weekLabel,weekTs,`openModalPre('person','${person}','${nws}')`)}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px" id="mt-blocks-row">
+      <div id="mtb_week">${block('week','📅','本週工作內容',weekLabel,weekTs,`openModalPre('person','${person}','${nws}')`)}</div>
+      <div id="mtb_later">${block('later','🗂','待處理','尚未設定日期的任務',laterTs,`openModalPre('person','${person}','')`,true)}</div>
     </div>
-
-    ${block('later','🗂','待處理','尚未設定日期的任務',laterTs,`openModalPre('person','${person}','')`,true)}
     ${doneTs.length?`<div class="mt-block mt-block-full" id="mtb_done">
       <div class="mt-block-header">
         <div class="mt-block-title">
@@ -1520,6 +1565,17 @@ function initMtDelegation(){
 
   // Delegate all interactions to mt-wrap
   wrap.addEventListener('click',async function(e){
+    // ── Stat card scroll ──
+    const statCard=e.target.closest('.mt-stat[data-scroll],.mt-stat-inner[data-scroll]');
+    if(statCard){
+      const target=$id(statCard.dataset.scroll);
+      if(target){
+        const container=document.querySelector('.content');
+        const offset=target.getBoundingClientRect().top-(container?.getBoundingClientRect().top||0)+(container?.scrollTop||0)-16;
+        (container||document.documentElement).scrollTo({top:offset,behavior:'smooth'});
+      }
+      return;
+    }
     // ── Pct button: open slider popup (ring SVG or ipct-btn) ──
     const ipctBtn=e.target.closest('.ipct-btn,.mt-pct-ring');
     if(ipctBtn){
@@ -2126,7 +2182,7 @@ window.createFolderAndAdd=async function(e,pname){
 
 // ── Member view ──
 function renderMember(){
-  const name=curMember,ts=tasks.filter(t=>t.assignee===name);
+  const name=curMember,ts=tasks.filter(t=>(t.assignee||'').split(',').map(s=>s.trim()).includes(name));
   const pjs=[...new Set(ts.map(t=>t.project).filter(Boolean))];
   $id('mem-wrap').innerHTML=`
     <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">
@@ -2185,8 +2241,15 @@ window.openModal=function(id=null){
 };
 window.openModalPre=function(type,val,date){
   openModal();
-  if(type==='project'){const ps=$id('f-project');if([...ps.options].some(o=>o.value===val))ps.value=val;$id('new-proj-g').style.display=ps.value==='__new__'?'':'none';}
-  else{const per=$id('f-person');if([...per.options].some(o=>o.value===val))per.value=val;$id('new-person-g').style.display=per.value==='__new__'?'':'none';}
+  if(type==='project'){
+    const ps=$id('f-project');
+    if([...ps.options].some(o=>o.value===val)) ps.value=val;
+    $id('new-proj-g').style.display=ps.value==='__new__'?'':'none';
+  } else if(type==='person'&&val){
+    // Auto-add the person as a chip
+    selectedPersons.add(val);
+    renderPersonChips();
+  }
   if(date!==undefined) $id('f-date').value=date;
 };
 window.closeModal=function(){
@@ -2222,8 +2285,7 @@ window.saveTask=async function(){
   // Collect assignees from chips + new person input
   let newPerson=$id('f-new-person').value.trim();
   if(newPerson) selectedPersons.add(newPerson);
-  if(selectedPersons.size===0){alert('請至少選擇一位負責人');return;}
-  const assignee=[...selectedPersons].join(',');
+  const assignee=[...selectedPersons].join(','); // 負責人可以為空
   const date=$id('f-date').value,note=$id('f-note').value.trim();
   const status=$id('f-status').value;
   const payload={project,task,pct,assignee,date,note,status,updatedAt:sts()};
@@ -2367,9 +2429,10 @@ function renderMembersPage(){
     <div class="mgmt-grid">
       ${allNames.map(name=>{
         const m=members.find(x=>x.name===name);
-        const myTasks=tasks.filter(t=>t.assignee===name);
-        const done=myTasks.filter(t=>t.pct===100).length;
-        const ongoing=myTasks.filter(t=>t.pct>0&&t.pct<100).length;
+        const myTasks=tasks.filter(t=>(t.assignee||'').split(',').map(s=>s.trim()).includes(name));
+        const done=myTasks.filter(t=>t.status==='完成'||t.pct===100).length;
+        const ongoing=myTasks.filter(t=>t.status==='進行中'||t.status==='審核中').length;
+        const todo=myTasks.filter(t=>t.status==='待辦'||(!t.status&&t.pct===0)).length;
         const avCls=gav(name);
         return`<div class="member-mgmt-card">
           <div class="member-mgmt-top">
@@ -2395,7 +2458,7 @@ function renderMembersPage(){
             </div>
           </div>
           <div class="member-mgmt-actions">
-            <button class="btn" style="flex:1;font-size:12px" onclick="switchMember('${name}',null)">查看任務</button>
+            <button class="btn" style="flex:1;font-size:12px" onclick="goToMemberTasks('${name}')">查看任務</button>
             <button class="btn" style="font-size:12px" onclick="openMemberModal('${name}')">編輯</button>
           </div>
         </div>`;
@@ -2457,8 +2520,11 @@ window.saveMember=async function(){
       // Also update existing tasks if name changed
       const oldM=members.find(m=>m.id===editMemberId);
       if(oldM&&oldM.name!==name){
-        const toUpdate=tasks.filter(t=>t.assignee===oldM.name);
-        await Promise.all(toUpdate.map(t=>updateDoc(docFn(db,'tasks',t.id),{assignee:name,updatedAt:sts()})));
+        const toUpdate=tasks.filter(t=>(t.assignee||'').split(',').map(s=>s.trim()).includes(oldM.name));
+        await Promise.all(toUpdate.map(t=>{
+          const names=(t.assignee||'').split(',').map(s=>s.trim()).map(n=>n===oldM.name?name:n);
+          return updateDoc(docFn(db,'tasks',t.id),{assignee:names.join(','),updatedAt:sts()});
+        }));
       }
       toast('已更新 ✓');
     } else {
@@ -2479,14 +2545,17 @@ window.deleteMember=async function(){
   }
   if(!editMemberId){alert('找不到人員資料，請重新開啟');return;}
   const memberName=m?.name||$id('fm-name').value.trim();
-  const taskCount=tasks.filter(t=>t.assignee===memberName).length;
+  const taskCount=tasks.filter(t=>(t.assignee||'').split(',').map(s=>s.trim()).includes(memberName)).length;
   const msg=taskCount>0
     ?`確定要刪除「${memberName}」？此人員有 ${taskCount} 個任務，任務不會被刪除，但負責人欄位將清空。`
     :`確定要刪除「${memberName}」？`;
   if(!confirm(msg))return;
   try{
     if(taskCount>0){
-      await Promise.all(tasks.filter(t=>t.assignee===memberName).map(t=>updateDoc(docFn(db,'tasks',t.id),{assignee:'',updatedAt:sts()})));
+      await Promise.all(tasks.filter(t=>(t.assignee||'').split(',').map(s=>s.trim()).includes(memberName)).map(t=>{
+        const names=(t.assignee||'').split(',').map(s=>s.trim()).filter(n=>n&&n!==memberName);
+        return updateDoc(docFn(db,'tasks',t.id),{assignee:names.join(','),updatedAt:sts()});
+      }));
     }
     await deleteDoc(docFn(db,'members',editMemberId));
     toast('人員已刪除');
@@ -2577,17 +2646,14 @@ function renderCalPanel(date){
       const tc=EV_TYPES[e.type]||EV_TYPES.other;
       const isTask=e._fromTask;
       const editFn=isTask?`calEditTask('${e.id.replace('task_','')}')`:`showCalForm('${e.id}')`;
+      const assignees=isTask?(e.assignee||'').split(',').map(s=>s.trim()).filter(Boolean):[];
       return`<div class="cal-panel-item" onclick="${editFn}">
         <div class="cal-panel-dot ${tc.dot}"></div>
         <div class="cal-panel-info">
           <div class="cal-panel-title">${e.title}</div>
-          <div class="cal-panel-meta">${tc.label}${e.project?' · '+e.project:''}${isTask&&e.assignee?' · 👤'+e.assignee:''}</div>
-          ${isTask?`<div style="display:flex;align-items:center;gap:6px;margin-top:5px">
-            <div style="flex:1;height:3px;border-radius:2px;background:var(--bg);overflow:hidden">
-              <div style="width:${e.pct}%;height:100%;background:linear-gradient(90deg,var(--accent),#4ade9a);border-radius:2px"></div>
-            </div>
-            <span style="font-size:10px;font-weight:600;color:var(--text-hint);white-space:nowrap">${e.pct}% · ${e.status||'—'}</span>
-          </div>`:''}
+          <div class="cal-panel-meta">${tc.label}${e.project?' · '+e.project:''}</div>
+          ${assignees.length?`<div style="display:flex;margin-top:4px">${assignees.slice(0,3).map(a=>`<div class="av ${gav(a)}" style="width:18px;height:18px;font-size:8px;border:1.5px solid var(--surface);margin-left:-3px;flex-shrink:0" title="${a}">${ini(a)}</div>`).join('')}</div>`:''}
+          ${isTask?`<div style="display:flex;align-items:center;gap:6px;margin-top:5px"><div style="flex:1;height:3px;border-radius:2px;background:var(--bg);overflow:hidden"><div style="width:${e.pct}%;height:100%;background:linear-gradient(90deg,var(--accent),#4ade9a);border-radius:2px"></div></div><span style="font-size:10px;font-weight:600;color:var(--text-hint);white-space:nowrap">${e.pct}% · ${e.status||'—'}</span></div>`:''}
           ${e.note?`<div style="font-size:10px;color:var(--text-hint);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">📝 ${e.note}</div>`:''}
         </div>
         <button class="cal-panel-edit" onclick="event.stopPropagation();${editFn}">${isTask?'編輯任務':'編輯'}</button>
@@ -2735,6 +2801,24 @@ function renderWeekCal(body){
     if(wb) wb.scrollTop=8*44;
   },50);
 }
+
+// ── Calendar drag to reschedule ──
+let dragCalId=null;
+window.calDragStart=function(id,e){dragCalId=id;e.stopPropagation();};
+window.calDrop=async function(date,e){
+  e.preventDefault();e.stopPropagation();
+  if(!dragCalId) return;
+  try{
+    if(dragCalId.startsWith('task_')){
+      await updateDoc(docFn(db,'tasks',dragCalId.replace('task_','')),{date,updatedAt:sts()});
+      toast('截止日期已更新 ✓');
+    } else {
+      await updateDoc(docFn(db,'calEvents',dragCalId),{date,updatedAt:sts()});
+      toast('事件已移至 '+date+' ✓');
+    }
+  }catch(err){alert('更新失敗：'+err.message);}
+  dragCalId=null;
+};
 
 // ── Drag project to folder ──
 let draggedProject=null;
@@ -3091,7 +3175,7 @@ function runSearch(q){
   // Search members
   members.forEach(m=>{
     if([m.name,m.role,m.note].some(f=>f&&f.toLowerCase().includes(ql))){
-      const cnt=tasks.filter(t=>t.assignee===m.name).length;
+      const cnt=tasks.filter(t=>(t.assignee||'').split(',').map(s=>s.trim()).includes(m.name)).length;
       results.push({type:'member',name:m.name,title:m.name,sub:`${m.role||''}${m.role&&cnt?' · ':''}${cnt} 個任務`});
     }
   });
