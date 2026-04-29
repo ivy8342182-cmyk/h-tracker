@@ -3,7 +3,7 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#1c1c1a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -43,7 +43,9 @@
   --shadow-lg:0 12px 40px rgba(0,0,0,.14),0 4px 12px rgba(0,0,0,.08);
 }
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Noto Sans TC',-apple-system,'Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased;}
+html{width:100%;overflow-x:hidden;}
+body{font-family:'Noto Sans TC',-apple-system,'Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;min-height:100dvh;width:100%;overflow-x:hidden;-webkit-font-smoothing:antialiased;}
+.app{display:flex;height:calc(100vh - 54px);height:calc(100dvh - 54px);}
 
 /* ── Header ── */
 .header{background:var(--sb-bg);padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:54px;position:sticky;top:0;z-index:50;}
@@ -57,9 +59,6 @@ body{font-family:'Noto Sans TC',-apple-system,'Helvetica Neue',Arial,sans-serif;
 .sync-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.2);}
 .sync-dot.live{background:#4ade9a;animation:pulse 2.5s infinite;}
 @keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(74,222,154,.4)}50%{opacity:.7;box-shadow:0 0 0 4px rgba(74,222,154,0)}}
-
-/* ── App shell ── */
-.app{display:flex;height:calc(100vh - 54px);}
 
 /* ── Sidebar ── */
 .sidebar{width:220px;flex-shrink:0;background:var(--sb-bg);overflow-y:auto;padding:1rem 0;display:flex;flex-direction:column;gap:2px;}
