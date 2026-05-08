@@ -1144,20 +1144,30 @@ function renderKanban(pjs,grps){
 
   if(!allPjs.size){grid.innerHTML='<div class="empty"><p style="font-size:32px">📋</p><p>目前沒有工作項目，點右上角新增吧！</p></div>';return;}
 
+  function safeId(pn){
+    // Create stable unique ID from project name using char codes
+    return pn.split('').map(c=>{const code=c.charCodeAt(0);return code<128&&/[a-zA-Z0-9]/.test(c)?c:'_'+code+'_';}).join('').slice(0,60);
+  }
   function kCard(pn){
     const ts=grps[pn]||[];
     const asgns=[...new Set(ts.flatMap(t=>(t.assignee||'').split(',').map(s=>s.trim())).filter(Boolean))];
     const avg=ts.length?Math.round(ts.reduce((a,t)=>a+(t.pct||0),0)/ts.length):0;
     const nd=ts.filter(t=>t.date).sort((a,b)=>new Date(a.date)-new Date(b.date))[0];
-    const sid='ap_'+pn.replace(/[^\w]/g,'_').slice(0,20);
+    const sid='ap_'+safeId(pn);
+    const fpkId='fpk_'+safeId(pn);
     const pFolder=folders.find(f=>f.projects&&f.projects.includes(pn));
-    // Derive project status from actual task statuses
     const allDone=ts.length>0&&ts.every(t=>t.status==='完成');
     const projStatus=allDone?'完成':
       ts.some(t=>t.status==='進行中')?'進行中':
       ts.some(t=>t.status==='審核中')?'審核中':
       ts.length>0?'待辦':'待辦';
-    return`<div class="k-card" draggable="true" ondragstart="dragProject('${pn}',event)" ondragend="dragProjectEnd(event)" onclick="openPDetail('${pn}')" style="cursor:pointer">
+    const pnSafe=pn.replace(/"/g,'&quot;');
+    return`<div class="k-card" draggable="true"
+      data-pn="${pnSafe}"
+      ondragstart="dragProjectFromCard(event)"
+      ondragend="dragProjectEnd(event)"
+      onclick="openPDetailFromCard(event)"
+      style="cursor:pointer">
       <div class="k-header">
         <div class="k-name">${pn}</div>
         <span class="badge ${sc(projStatus)}">${projStatus}</span>
@@ -1169,26 +1179,26 @@ function renderKanban(pjs,grps){
           ${nd?`<div class="due ${ov(nd.date)&&nd.pct<100?'overdue':''}">到期 ${nd.date}</div>`:''}
           <div style="display:flex;gap:4px">
             <div class="ap-wrap">
-              <button class="assign-btn" onclick="toggleAp(event,'${sid}','${pn}')">指派 ▾</button>
-              <div class="ap" id="${sid}" data-pn="${pn}">
-                <div class="ap-scope"><button class="ap-scope-btn active" onclick="setScope(event,'${sid}','all','${pn}')">全部任務</button><button class="ap-scope-btn" onclick="setScope(event,'${sid}','new','${pn}')">僅未指派</button></div>
+              <button class="assign-btn" onclick="toggleAp(event,'${sid}','${pnSafe}')">指派 ▾</button>
+              <div class="ap" id="${sid}" data-pn="${pnSafe}">
+                <div class="ap-scope"><button class="ap-scope-btn active" onclick="setScope(event,'${sid}','all','${pnSafe}')">全部任務</button><button class="ap-scope-btn" onclick="setScope(event,'${sid}','new','${pnSafe}')">僅未指派</button></div>
                 <div class="ap-head">點選加入／再點移除</div>
                 <div class="ap-list"></div>
               </div>
             </div>
             <div class="ap-wrap">
-              <button class="k-card-folder-btn" onclick="toggleFolderPicker(event,'fpk_${pn.replace(/[^\w]/g,'_')}')">${pFolder?'📁 '+pFolder.name:'📂 移至'}</button>
-              <div class="ap" id="fpk_${pn.replace(/[^\w]/g,'_')}" style="min-width:150px" data-pn="${pn.replace(/"/g,'&quot;')}">
+              <button class="k-card-folder-btn" onclick="toggleFolderPicker(event,'${fpkId}')">${pFolder?'📁 '+pFolder.name:'📂 移至'}</button>
+              <div class="ap" id="${fpkId}" style="min-width:150px" data-pn="${pnSafe}">
                 <div class="ap-head">移至資料夾</div>
                 ${folders.map(f=>`<div class="ap-person ${pFolder&&pFolder.id===f.id?'cur':''}"
-                  data-folder-id="${f.id}" data-picker-id="fpk_${pn.replace(/[^\w]/g,'_')}"
+                  data-folder-id="${f.id}" data-picker-id="${fpkId}"
                   onclick="assignToFolderFromPicker(event,this)">
                   ${pFolder&&pFolder.id===f.id?'✓ ':''}<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${f.color||'#999'};margin-right:5px"></span>${f.name}
                 </div>`).join('')}
                 ${pFolder?`<div class="ap-person" style="color:var(--text-hint)"
-                  data-picker-id="fpk_${pn.replace(/[^\w]/g,'_')}"
+                  data-picker-id="${fpkId}"
                   onclick="removeFromFolderFromPicker(event,this)">✕ 移出資料夾</div>`:''}
-                <div class="ap-person" style="color:var(--accent);font-size:12px" onclick="createFolderAndAdd(event,'${pn.replace(/'/g,"\\'")}')">＋ 新增資料夾</div>
+                <div class="ap-person" style="color:var(--accent);font-size:12px" data-pn="${pnSafe}" onclick="createFolderAndAdd(event,this.dataset.pn)">＋ 新增資料夾</div>
               </div>
             </div>
           </div>
