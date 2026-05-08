@@ -1,4 +1,4 @@
-<!-- h-tracker v3.0 build:20260428 -->
+<!-- h-tracker v3.0 build:20260508 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -798,15 +798,27 @@ textarea.fc{resize:vertical;min-height:68px;}
         <span class="cb-arrow">▾</span>
         <div class="cb-dd" id="cb-dd">
           <div class="cb-sec">建築專案生命週期</div>
-          <div class="cb-opt" data-v="評估中" data-p="10" onclick="selectTask(this)"><span class="pdot" style="background:#9FE1CB"></span>評估中（可行性評估與初步規劃）</div>
-          <div class="cb-opt" data-v="概念草圖設計" data-p="20" onclick="selectTask(this)"><span class="pdot" style="background:#B5D4F4"></span>概念草圖設計（空間配置、繪製初步設計圖）</div>
-          <div class="cb-opt" data-v="已簽約" data-p="35" onclick="selectTask(this)"><span class="pdot" style="background:#AFA9EC"></span>已簽約（細部設計繪製與執照申請）</div>
-          <div class="cb-opt" data-v="建築執照掛件" data-p="50" onclick="selectTask(this)"><span class="pdot" style="background:#FAC775"></span>建築執照掛件</div>
-          <div class="cb-opt" data-v="建築執照已取得" data-p="60" onclick="selectTask(this)"><span class="pdot" style="background:#C0DD97"></span>建築執照已取得</div>
-          <div class="cb-opt" data-v="開工期限" data-p="70" onclick="selectTask(this)"><span class="pdot" style="background:#F5C4B3"></span>開工期限</div>
-          <div class="cb-opt" data-v="申請展期期限" data-p="75" onclick="selectTask(this)"><span class="pdot" style="background:#F09595"></span>申請展期期限</div>
-          <div class="cb-opt" data-v="建築期限" data-p="85" onclick="selectTask(this)"><span class="pdot" style="background:#ED93B1"></span>建築期限</div>
-          <div class="cb-opt" data-v="工程完竣_申請使用執照" data-p="100" onclick="selectTask(this)"><span class="pdot" style="background:#1D9E75"></span>工程完竣 — 申請使用執照</div>
+          <div class="cb-opt" data-v="諮詢案件" onclick="selectTask(this)"><span class="pdot" style="background:#9FE1CB"></span>諮詢案件</div>
+          <div class="cb-opt" data-v="已簽約" onclick="selectTask(this)"><span class="pdot" style="background:#AFA9EC"></span>已簽約</div>
+          <div class="cb-opt" data-v="討論架構及草圖繪製" onclick="selectTask(this)"><span class="pdot" style="background:#B5D4F4"></span>討論架構及草圖繪製</div>
+          <div class="cb-opt" data-v="申請建築指(定)示線" onclick="selectTask(this)"><span class="pdot" style="background:#C0DD97"></span>申請建築指(定)示線</div>
+          <div class="cb-opt" data-v="相關證明申請" onclick="selectTask(this)"><span class="pdot" style="background:#FAC775"></span>相關證明申請</div>
+          <div class="cb-opt" data-v="建照圖說繪製" onclick="selectTask(this)"><span class="pdot" style="background:#F5C4B3"></span>建照圖說繪製</div>
+          <div class="cb-opt" data-v="建造執照申請" onclick="selectTask(this)"><span class="pdot" style="background:#F09595"></span>建造執照申請</div>
+          <div class="cb-opt" data-v="開工程序" onclick="selectTask(this)"><span class="pdot" style="background:#ED93B1"></span>開工程序</div>
+          <div class="cb-opt" data-v="空污開工申報" onclick="selectTask(this)"><span class="pdot" style="background:#FDB97D"></span>空污開工申報</div>
+          <div class="cb-opt" data-v="ＮＣＣ圖說審查" onclick="selectTask(this)"><span class="pdot" style="background:#A8D8EA"></span>ＮＣＣ圖說審查</div>
+          <div class="cb-opt" data-v="雨汙水圖說審查（都市計畫區內）" onclick="selectTask(this)"><span class="pdot" style="background:#B8E0D2"></span>雨汙水圖說審查（都市計畫區內）</div>
+          <div class="cb-opt" data-v="五大管線圖說審查" onclick="selectTask(this)"><span class="pdot" style="background:#D6AEDD"></span>五大管線圖說審查</div>
+          <div class="cb-opt" data-v="逐層勘驗" onclick="selectTask(this)"><span class="pdot" style="background:#FFEAA7"></span>逐層勘驗</div>
+          <div class="cb-opt" data-v="ＮＣＣ竣工審查" onclick="selectTask(this)"><span class="pdot" style="background:#74B9FF"></span>ＮＣＣ竣工審查</div>
+          <div class="cb-opt" data-v="雨汙水竣工審查（都市計畫區內）" onclick="selectTask(this)"><span class="pdot" style="background:#55EFC4"></span>雨汙水竣工審查（都市計畫區內）</div>
+          <div class="cb-opt" data-v="五大管線竣工審查" onclick="selectTask(this)"><span class="pdot" style="background:#A29BFE"></span>五大管線竣工審查</div>
+          <div class="cb-opt" data-v="空污竣工申報" onclick="selectTask(this)"><span class="pdot" style="background:#FD79A8"></span>空污竣工申報</div>
+          <div class="cb-opt" data-v="門牌申請" onclick="selectTask(this)"><span class="pdot" style="background:#FDCB6E"></span>門牌申請</div>
+          <div class="cb-opt" data-v="公共設施無（損）害證明" onclick="selectTask(this)"><span class="pdot" style="background:#E17055"></span>公共設施無（損）害證明</div>
+          <div class="cb-opt" data-v="材料證明收集" onclick="selectTask(this)"><span class="pdot" style="background:#00B894"></span>材料證明收集</div>
+          <div class="cb-opt" data-v="使用執照申請" onclick="selectTask(this)"><span class="pdot" style="background:#1D9E75"></span>使用執照申請</div>
         </div>
       </div>
     </div>
@@ -919,6 +931,15 @@ function gav(n){if(!avMap[n]){avMap[n]=AVCS[avIdx++%AVCS.length];}return avMap[n
 function ini(n){return n?n.slice(0,1):'?';}
 function sc(s){return{完成:'b-done','審核中':'b-review','進行中':'b-ongoing','待辦':'b-pending'}[s]||'b-pending';}
 function cs(p){return p===100?'完成':p>=60?'審核中':p>0?'進行中':'待辦';}
+
+// Calculate project status from actual task status fields (same as kanban)
+function projectStatus(ts){
+  if(!ts||!ts.length) return '待辦';
+  if(ts.every(t=>t.status==='完成'||t.pct===100)) return '完成';
+  if(ts.some(t=>t.status==='進行中')) return '進行中';
+  if(ts.some(t=>t.status==='審核中')) return '審核中';
+  return '待辦';
+}
 function ov(d){return d&&new Date(d)<new Date();}
 function toast(m){const e=document.getElementById('toast');e.textContent=m;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),2200);}
 function $id(i){return document.getElementById(i);}
@@ -1291,7 +1312,7 @@ function renderKanban(pjs,grps){
                   ${asgns.length>3?`<div class="av" style="width:20px;height:20px;font-size:8px;background:var(--bg);color:var(--text-hint)">+${asgns.length-3}</div>`:''}
                 </div>
                 <div class="flist-date${isOv?' flist-overdue':''}">${dateStr}</div>
-                <div class="flist-status"><span class="badge ${sc(cs(avg))}" style="font-size:10px">${cs(avg)}</span></div>
+                <div class="flist-status"><span class="badge ${sc(projectStatus(ts))}" style="font-size:10px">${projectStatus(ts)}</span></div>
               </div>`;
             }).join('')}
           </div>
@@ -1377,11 +1398,12 @@ function renderProjList(pjs,grps){
   wrap.innerHTML=pjs.map(pn=>{
     const ts=grps[pn]||[],sid='pl_'+pn.replace(/\W/g,'_');
     const meta=projectMeta[pn]||{};
-    const metaInfo=meta.client||meta.address?`
-      <div style="display:flex;gap:16px;padding:6px 1rem 8px;background:var(--surface-2);border-bottom:1px solid var(--border);flex-wrap:wrap">
+    const pStatus=projectStatus(ts);
+    const metaInfo=`<div style="display:flex;align-items:center;gap:12px;padding:6px 1rem 8px;background:var(--surface-2);border-bottom:1px solid var(--border);flex-wrap:wrap">
+        <span class="badge ${sc(pStatus)}" style="font-size:11px">${pStatus}</span>
         ${meta.client?`<span style="font-size:11px;color:var(--text-hint)">👤 ${meta.client}</span>`:''}
         ${meta.address?`<span style="font-size:11px;color:var(--text-hint)">📍 ${meta.address}</span>`:''}
-      </div>`:'';
+      </div>`;
     const rows=listTable(ts,[
       {label:'任務名稱',render:nameCell},
       {label:'完成度',render:pctCell},
@@ -1737,9 +1759,14 @@ window.openPDetail=function(pname){
 };
 
 const PHASE_COLORS={
-  '評估中':'#9FE1CB','概念草圖設計':'#B5D4F4','已簽約':'#AFA9EC',
-  '建築執照掛件':'#FAC775','建築執照已取得':'#C0DD97','開工期限':'#F5C4B3',
-  '申請展期期限':'#F09595','建築期限':'#ED93B1','工程完竣_申請使用執照':'#1D9E75'
+  '諮詢案件':'#9FE1CB','已簽約':'#AFA9EC','討論架構及草圖繪製':'#B5D4F4',
+  '申請建築指(定)示線':'#C0DD97','相關證明申請':'#FAC775','建照圖說繪製':'#F5C4B3',
+  '建造執照申請':'#F09595','開工程序':'#ED93B1','空污開工申報':'#FDB97D',
+  'ＮＣＣ圖說審查':'#A8D8EA','雨汙水圖說審查（都市計畫區內）':'#B8E0D2',
+  '五大管線圖說審查':'#D6AEDD','逐層勘驗':'#FFEAA7','ＮＣＣ竣工審查':'#74B9FF',
+  '雨汙水竣工審查（都市計畫區內）':'#55EFC4','五大管線竣工審查':'#A29BFE',
+  '空污竣工申報':'#FD79A8','門牌申請':'#FDCB6E','公共設施無（損）害證明':'#E17055',
+  '材料證明收集':'#00B894','使用執照申請':'#1D9E75',
 };
 
 function renderPDetail(){
@@ -2075,7 +2102,7 @@ function renderFolderDetail(){
           ondragstart="dragProject('${pn}',event)"
           ondragend="dragProjectEnd(event)"
           onclick="openPDetail('${pn}')" style="cursor:pointer">
-          <div class="k-header"><div class="k-name">${pn}</div><span class="badge ${sc(cs(avg2))}">${cs(avg2)}</span></div>
+          <div class="k-header"><div class="k-name">${pn}</div><span class="badge ${sc(projectStatus(ts))}">${projectStatus(ts)}</span></div>
           <div class="k-tasks">${ts.map(t=>`<div class="k-row" onclick="event.stopPropagation();openModal('${t.id}')"><div class="k-desc">${t.task||'（未命名）'}</div><div class="k-bar-wrap"><div class="k-bar-fill" style="width:${t.pct||0}%"></div></div><div class="k-pct">${t.pct||0}%</div></div>`).join('')}</div>
           <div class="k-footer" onclick="event.stopPropagation()">
             <div class="avatars">${asgns.map(a=>`<div class="av ${gav(a)}" title="${a}">${ini(a)}</div>`).join('')}</div>
@@ -2110,7 +2137,7 @@ function renderFolderDetail(){
           <div class="flist-pct"><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:4px;border-radius:2px;background:var(--bg);overflow:hidden"><div style="width:${avg2}%;height:100%;background:linear-gradient(90deg,var(--accent),#4ade9a);border-radius:2px"></div></div><span style="font-size:11px;font-weight:600;color:var(--text-muted);width:32px;text-align:right">${avg2}%</span></div></div>
           <div class="flist-persons">${asgns.slice(0,4).map(a=>`<div class="av ${gav(a)}" style="width:20px;height:20px;font-size:8px;border:1.5px solid var(--surface);margin-left:-3px" title="${a}">${ini(a)}</div>`).join('')}</div>
           <div class="flist-date${isOv?' flist-overdue':''}">${nd?nd.date.slice(5).replace('-','/'):' — '}</div>
-          <div class="flist-status"><span class="badge ${sc(cs(avg2))}" style="font-size:10px">${cs(avg2)}</span></div>
+          <div class="flist-status"><span class="badge ${sc(projectStatus(ts))}" style="font-size:10px">${projectStatus(ts)}</span></div>
         </div>`;
       }).join('')}
     </div>`
@@ -2393,7 +2420,8 @@ window.saveTask=async function(){
 
 // ── Combobox ──
 const cbi=$id('f-task'),cbd=$id('cb-dd');
-cbi.addEventListener('focus',()=>cbd.classList.add('open'));
+let _cbJustSelected=false;
+cbi.addEventListener('focus',()=>{if(_cbJustSelected){_cbJustSelected=false;return;}cbd.classList.add('open');});
 cbi.addEventListener('input',()=>{
   cbd.classList.add('open');const q=cbi.value.toLowerCase();
   cbd.querySelectorAll('.cb-opt').forEach(o=>o.style.display=(!q||o.dataset.v.toLowerCase().includes(q)||o.textContent.toLowerCase().includes(q))?'':'none');
@@ -2402,8 +2430,9 @@ document.addEventListener('click',e=>{if(!$id('cb-wrap').contains(e.target))cbd.
 window.selectTask=function(el){
   cbi.value=el.dataset.v;
   cbd.querySelectorAll('.cb-opt').forEach(o=>o.classList.remove('sel'));
-  el.classList.add('sel');cbd.classList.remove('open');
-  if(el.dataset.p){const p=parseInt(el.dataset.p);$id('f-pct').value=p;$id('f-pct-lbl').textContent=p+'%';}
+  el.classList.add('sel');
+  cbd.classList.remove('open');
+  _cbJustSelected=true;
   cbi.focus();
 };
 

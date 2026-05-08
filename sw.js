@@ -1,13 +1,7 @@
-const CACHE = 'h-tracker-v2';
-const ASSETS = [
-  './',
-  './index.html',
-];
+const CACHE = 'h-tracker-v20260508';
 
 self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting())
-  );
+  self.skipWaiting();
 });
 
 self.addEventListener('activate', e => {
@@ -19,14 +13,37 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  // Let Firebase and Google Fonts requests go through normally
-  if (e.request.url.includes('firestore') ||
-      e.request.url.includes('googleapis') ||
-      e.request.url.includes('gstatic') ||
-      e.request.url.includes('firebase')) {
+  const url = e.request.url;
+
+  if (url.includes('firestore') ||
+      url.includes('googleapis') ||
+      url.includes('gstatic') ||
+      url.includes('firebase') ||
+      url.includes('fonts')) {
     return;
   }
+
+  if (url.endsWith('/') || url.includes('index.html')) {
+    e.respondWith(
+      fetch(e.request)
+        .then(res => {
+          const clone = res.clone();
+          caches.open(CACHE).then(c => c.put(e.request, clone));
+          return res;
+        })
+        .catch(() => caches.match(e.request))
+    );
+    return;
+  }
+
   e.respondWith(
-    caches.match(e.request).then(cached => cached || fetch(e.request))
+    caches.match(e.request).then(cached => {
+      if (cached) return cached;
+      return fetch(e.request).then(res => {
+        const clone = res.clone();
+        caches.open(CACHE).then(c => c.put(e.request, clone));
+        return res;
+      });
+    })
   );
 });
