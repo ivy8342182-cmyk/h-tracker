@@ -205,6 +205,11 @@ select:focus,input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 
 .folder-name-input:focus { outline: 2px solid var(--accent); border-radius: 4px; padding: 0 4px; }
 .folder-count { font-size: 11px; color: var(--text-hint); background: var(--bg); border: 1px solid var(--border); border-radius: 20px; padding: 1px 8px; white-space:nowrap; flex-shrink:0; }
 .folder-color { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.folder-drag-handle { cursor: grab; color: var(--text-hint); font-size: 16px; padding: 0 6px 0 0; user-select: none; flex-shrink: 0; }
+.folder-drag-handle:active { cursor: grabbing; }
+.folder-block.folder-drag-over-top { border-top: 2px solid var(--accent); }
+.folder-block.folder-drag-over-bottom { border-bottom: 2px solid var(--accent); }
+.folder-block.folder-dragging { opacity: .4; }
 .folder-actions { display: flex; gap: 4px; opacity: 0; transition: opacity .15s; flex-shrink:0; }
 .folder-header:hover .folder-actions { opacity: 1; }
 .folder-name-input { font-size: 13px; font-weight: 600; color: var(--text); border: none; background: transparent; outline: none; flex: 1; font-family: inherit; min-width: 0; overflow:hidden; text-overflow:ellipsis; }
@@ -940,6 +945,7 @@ function $id(i){return document.getElementById(i);}
   },e=>{$id('sync-text').textContent='連線失敗';console.error(e);});
   fs.onSnapshot(folderCol,snap=>{
     folders=snap.docs.map(d=>({id:d.id,...d.data()}));
+    folders.sort((a,b)=>(a.order??999)-(b.order??999));
     syncSidebarFolders();
     if(!$id('overlay').classList.contains('open')) rebuildProjectSelect(projects());
     if(nav==='project') renderProject();
@@ -1219,12 +1225,18 @@ function renderKanban(pjs,grps){
     const fProjsWithTasks=fProjs.filter(pn=>grps[pn]); // for stats only
     const isOpen=!collapsed['folder_'+f.id];
     const fView=folderViews[f.id]||'kanban'; // 'kanban' or 'list'
-    html+=`<div class="folder-block">
+    html+=`<div class="folder-block"
+      data-fid="${f.id}"
+      ondragover="folderBlockDragOver(event,'${f.id}')"
+      ondragleave="folderBlockDragLeave(event)"
+      ondrop="folderBlockOrProjectDrop(event,'${f.id}')">
       <div class="folder-header" data-fid="${f.id}"
-        onclick="toggleFolderCollapse('${f.id}',this)"
-        ondragover="folderDragOver(event,'${f.id}')"
-        ondragleave="folderDragLeave(event)"
-        ondrop="dropToFolder(event,'${f.id}')">
+        onclick="toggleFolderCollapse('${f.id}',this)">
+        <span class="folder-drag-handle" title="拖曳排序"
+          draggable="true"
+          ondragstart="folderBlockDragStart(event,'${f.id}')"
+          ondragend="folderBlockDragEnd(event)"
+          onclick="event.stopPropagation()">⠿</span>
         <span class="folder-icon">${isOpen?'📂':'📁'}</span>
         <span class="folder-color" style="background:${f.color||'#888'}"></span>
         <input class="folder-name-input" value="${f.name.replace(/"/g,'&quot;')}" data-fid="${f.id}" data-orig="${f.name.replace(/"/g,'&quot;')}" onclick="event.stopPropagation()">
@@ -2885,6 +2897,77 @@ window.calDrop=async function(date,e){
     }
   }catch(err){alert('更新失敗：'+err.message);}
   dragCalId=null;
+};
+
+// ── Folder block reorder ──
+let draggedFolderId=null;
+
+window.folderBlockDragStart=function(e,fid){
+  draggedFolderId=fid;
+  e.stopPropagation();
+  e.dataTransfer.effectAllowed='move';
+  setTimeout(()=>{
+    const el=document.querySelector(`.folder-block[data-fid="${fid}"]`);
+    if(el) el.classList.add('folder-dragging');
+  },0);
+};
+
+window.folderBlockDragEnd=function(e){
+  draggedFolderId=null;
+  document.querySelectorAll('.folder-block').forEach(el=>{
+    el.classList.remove('folder-dragging','folder-drag-over-top','folder-drag-over-bottom');
+  });
+};
+
+window.folderBlockDragLeave=function(e){
+  const block=e.currentTarget;
+  if(!block.contains(e.relatedTarget)){
+    block.classList.remove('folder-drag-over-top','folder-drag-over-bottom');
+  }
+};
+
+window.folderBlockDragOver=function(e,fid){
+  e.preventDefault();
+  if(draggedFolderId&&draggedFolderId!==fid){
+    // Folder reorder mode
+    e.dataTransfer.dropEffect='move';
+    const target=e.currentTarget;
+    document.querySelectorAll('.folder-block').forEach(el=>el.classList.remove('folder-drag-over-top','folder-drag-over-bottom'));
+    const rect=target.getBoundingClientRect();
+    target.classList.add(e.clientY<rect.top+rect.height/2?'folder-drag-over-top':'folder-drag-over-bottom');
+  } else if(draggedProject&&!draggedFolderId){
+    // Project drop mode
+    e.dataTransfer.dropEffect='move';
+    folderDragOver(e,fid);
+  }
+};
+
+window.folderBlockOrProjectDrop=async function(e,fid){
+  e.preventDefault();e.stopPropagation();
+  document.querySelectorAll('.folder-block').forEach(el=>el.classList.remove('folder-drag-over-top','folder-drag-over-bottom'));
+  if(draggedFolderId&&draggedFolderId!==fid){
+    // Folder reorder
+    const srcIdx=folders.findIndex(f=>f.id===draggedFolderId);
+    const dstIdx=folders.findIndex(f=>f.id===fid);
+    if(srcIdx===-1||dstIdx===-1) return;
+    const target=e.currentTarget;
+    const rect=target.getBoundingClientRect();
+    const insertBefore=e.clientY<rect.top+rect.height/2;
+    const newOrder=[...folders];
+    const [moved]=newOrder.splice(srcIdx,1);
+    const insertAt=insertBefore
+      ?(dstIdx>srcIdx?dstIdx-1:dstIdx)
+      :(dstIdx>srcIdx?dstIdx:dstIdx+1);
+    newOrder.splice(Math.max(0,insertAt),0,moved);
+    try{
+      await Promise.all(newOrder.map((f,i)=>updateDoc(docFn(db,'folders',f.id),{order:i})));
+      toast('資料夾順序已更新 ✓');
+    }catch(err){alert('排序失敗：'+err.message);}
+    draggedFolderId=null;
+  } else if(draggedProject){
+    // Project drop into folder
+    await dropToFolder(e,fid);
+  }
 };
 
 // ── Drag project to folder ──
