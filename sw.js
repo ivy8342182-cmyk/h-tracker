@@ -1,4 +1,4 @@
-const CACHE = 'h-tracker-v20260508';
+const CACHE = 'h-tracker-v202605080000';
 
 self.addEventListener('install', e => {
   self.skipWaiting();
@@ -14,36 +14,22 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   const url = e.request.url;
-
-  if (url.includes('firestore') ||
-      url.includes('googleapis') ||
-      url.includes('gstatic') ||
-      url.includes('firebase') ||
-      url.includes('fonts')) {
+  if (url.includes('firestore') || url.includes('googleapis') ||
+      url.includes('gstatic') || url.includes('firebase') || url.includes('fonts')) {
     return;
   }
-
   if (url.endsWith('/') || url.includes('index.html')) {
     e.respondWith(
-      fetch(e.request)
-        .then(res => {
-          const clone = res.clone();
-          caches.open(CACHE).then(c => c.put(e.request, clone));
-          return res;
-        })
+      fetch(e.request, {cache: 'no-store'})
+        .then(res => { const clone = res.clone(); caches.open(CACHE).then(c => c.put(e.request, clone)); return res; })
         .catch(() => caches.match(e.request))
     );
     return;
   }
-
   e.respondWith(
     caches.match(e.request).then(cached => {
       if (cached) return cached;
-      return fetch(e.request).then(res => {
-        const clone = res.clone();
-        caches.open(CACHE).then(c => c.put(e.request, clone));
-        return res;
-      });
+      return fetch(e.request).then(res => { const clone = res.clone(); caches.open(CACHE).then(c => c.put(e.request, clone)); return res; });
     })
   );
 });

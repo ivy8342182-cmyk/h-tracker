@@ -1,4 +1,4 @@
-<!-- h-tracker v3.0 build:20260508 -->
+<!-- h-tracker v3.0 build:202605080000 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -54,7 +54,8 @@ body{font-family:'Noto Sans TC',-apple-system,'Helvetica Neue',Arial,sans-serif;
 .brand-mark span{color:rgba(255,255,255,.9);font-size:13px;font-weight:600;letter-spacing:-.5px;}
 .brand-name{font-size:13px;font-weight:500;color:rgba(255,255,255,.85);letter-spacing:.01em;}
 .brand-sub{font-size:11px;color:rgba(255,255,255,.35);letter-spacing:.02em;margin-top:1px;}
-.header-right{display:flex;align-items:center;gap:10px;}
+.header-right{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.backup-btn{display:inline-flex !important;align-items:center;gap:4px;flex-shrink:0 !important;white-space:nowrap;}
 .sync-status{font-size:11px;color:rgba(255,255,255,.35);display:flex;align-items:center;gap:5px;}
 .sync-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.2);}
 .sync-dot.live{background:#4ade9a;animation:pulse 2.5s infinite;}
@@ -525,14 +526,17 @@ textarea.fc{resize:vertical;min-height:68px;}
   .sync-status{display:none;}
   .new-btn-text{display:none;}
   .new-btn-short{display:inline !important;}
-  .search-input{width:160px !important;}
-  .search-input:focus{width:190px !important;}
+  .search-input{width:120px !important;}
+  .search-input:focus{width:150px !important;}
+  .backup-btn{font-size:11px !important;padding:4px 8px !important;}
   .brand-sub{display:none;}
   .stats{padding:0 .875rem;}
 }
-@media(min-width:701px){
-  .hamburger{display:none;}
-  .mobile-overlay{display:none!important;}
+.backup-btn, .export-btn { display:inline-flex !important; align-items:center; gap:4px; }
+@media(max-width:700px){
+  .backup-btn { font-size:11px !important; padding:4px 8px !important; }
+  .export-btn { font-size:11px !important; padding:3px 8px !important; }
+}
 }
 </style>
 </head>
@@ -558,6 +562,7 @@ textarea.fc{resize:vertical;min-height:68px;}
       <div class="sync-dot" id="sync-dot"></div>
       <span id="sync-text">連線中...</span>
     </div>
+    <button class="btn backup-btn" onclick="backupData()" style="font-size:12px;padding:5px 12px;flex-shrink:0;background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.25)" title="備份所有資料">⬇ 備份</button>
     <button class="btn btn-primary" onclick="openModal()"><span class="new-btn-text">＋ 新增進度</span><span class="new-btn-short" style="display:none">＋</span></button>
   </div>
 </header>
@@ -659,8 +664,11 @@ textarea.fc{resize:vertical;min-height:68px;}
       <div style="padding:0 2rem .5rem">
         <div class="c-tabs"><button class="ctab active">清單</button></div>
       </div>
-      <div class="mt-person-bar" id="mt-person-bar">
-        <!-- populated by syncFilters -->
+      <div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;flex-shrink:0;border-bottom:1px solid var(--border);background:var(--surface);padding:.75rem 2rem">
+        <div class="mt-person-bar" id="mt-person-bar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:1;border:none;padding:0;background:none">
+          <!-- populated by syncFilters -->
+        </div>
+        <button class="btn export-btn" onclick="exportPersonReport()" style="font-size:12px;padding:5px 14px;flex-shrink:0;white-space:nowrap">⬇ 匯出報告</button>
       </div>
       <select id="mt-person" style="display:none" onchange="renderMyTasks()"><option value="">選擇人員...</option></select>
       <div class="list-wrap" id="mt-wrap"></div>
@@ -1051,7 +1059,8 @@ function syncFilters(){
         <button class="person-chip ${curPerson===p?'active':''}" data-name="${p}" onclick="selectMtPerson('${p}')">
           <span class="chip-av ${gav(p)}">${ini(p)}</span>
           ${p}
-        </button>`).join('');
+        </button>`).join('')
+;
   }
   // modal selects — only rebuild when modal is closed to avoid disrupting active selection
   const modalOpen=$id('overlay').classList.contains('open');
@@ -3193,6 +3202,213 @@ window.toggleMtSelectMode=window.toggleDoneSelectMode;
 window.selectAllMtTasks=window.selectAllDone;
 window.deselectAllMtTasks=window.deselectAllDone;
 window.deleteSelectedMtTasks=window.deleteSelectedDone;
+
+// ── Backup all data ──
+window.backupData=function(){
+  // Show format choice popup
+  const existing=$id('backup-modal');
+  if(existing) existing.remove();
+  const modal=document.createElement('div');
+  modal.id='backup-modal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:600;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(3px)';
+  modal.innerHTML=`
+    <div style="background:var(--surface);border-radius:var(--radius);border:1px solid var(--border-strong);padding:1.75rem;width:100%;max-width:340px;box-shadow:var(--shadow-lg)">
+      <div style="font-size:16px;font-weight:600;margin-bottom:6px">備份資料</div>
+      <div style="font-size:13px;color:var(--text-muted);margin-bottom:1.25rem">請選擇備份格式</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <button class="btn" onclick="doBackupJson();$id('backup-modal').remove()"
+          style="padding:12px;font-size:13px;display:flex;align-items:center;gap:10px;text-align:left">
+          <span style="font-size:20px">📄</span>
+          <div>
+            <div style="font-weight:600">JSON 備份</div>
+            <div style="font-size:11px;color:var(--text-hint);margin-top:2px">完整資料備份，可用於還原</div>
+          </div>
+        </button>
+        <button class="btn" onclick="doBackupExcel();$id('backup-modal').remove()"
+          style="padding:12px;font-size:13px;display:flex;align-items:center;gap:10px;text-align:left">
+          <span style="font-size:20px">📊</span>
+          <div>
+            <div style="font-weight:600">Excel 備份</div>
+            <div style="font-size:11px;color:var(--text-hint);margin-top:2px">多工作表 Excel 檔，方便閱讀</div>
+          </div>
+        </button>
+      </div>
+      <button class="btn" onclick="$id('backup-modal').remove()" style="margin-top:12px;width:100%;font-size:12px">取消</button>
+    </div>`;
+  modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
+  document.body.appendChild(modal);
+};
+
+window.doBackupJson=function(){
+  const now=new Date();
+  const dateStr=`${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
+  const data={exportedAt:now.toISOString(),tasks,folders,members,calEvents,projects:Object.values(projectMeta)};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`h-tracker-backup-${dateStr}.json`;
+  a.click();URL.revokeObjectURL(a.href);
+  toast('JSON 備份已下載 ✓');
+};
+
+window.doBackupExcel=async function(){
+  toast('正在產生 Excel...');
+  // Load SheetJS dynamically
+  if(!window.XLSX){
+    await new Promise((res,rej)=>{
+      const s=document.createElement('script');
+      s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+      s.onload=res;s.onerror=rej;
+      document.head.appendChild(s);
+    });
+  }
+  const now=new Date();
+  const dateStr=`${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
+  const wb=XLSX.utils.book_new();
+
+  // Sheet 1: Tasks
+  const taskData=tasks.map(t=>({
+    '專案名稱':t.project||'',
+    '工作項目':t.task||'',
+    '完成度(%)':t.pct||0,
+    '狀態':t.status||'',
+    '負責人':t.assignee||'',
+    '截止日期':t.date||'',
+    '備註':t.note||''
+  }));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(taskData),'工作項目');
+
+  // Sheet 2: Projects
+  const projData=Object.values(projectMeta).map(m=>({
+    '專案名稱':m.name||'',
+    '業主名稱':m.client||'',
+    '基地地址':m.address||''
+  }));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(projData),'專案資料');
+
+  // Sheet 3: Members
+  const memData=members.map(m=>({
+    '姓名':m.name||'',
+    '職稱':m.role||'',
+    '備註':m.note||''
+  }));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(memData),'人員');
+
+  // Sheet 4: Folders
+  const folderData=folders.map(f=>({
+    '資料夾名稱':f.name||'',
+    '包含專案':(f.projects||[]).join('、')
+  }));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(folderData),'資料夾');
+
+  // Sheet 5: Calendar Events
+  const calData=calEvents.map(e=>({
+    '標題':e.title||'',
+    '類型':e.type||'',
+    '日期':e.date||'',
+    '關聯專案':e.project||'',
+    '備註':e.note||''
+  }));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(calData),'行事曆事件');
+
+  XLSX.writeFile(wb,`h-tracker-backup-${dateStr}.xlsx`);
+  toast('Excel 備份已下載 ✓');
+};
+
+// ── Export person work report ──
+window.exportPersonReport=function(){
+  const person=$id('mt-person').value||window._curMtPerson||'';
+  if(!person){alert('請先選擇人員');return;}
+  const myTasks=tasks.filter(t=>(t.assignee||'').split(',').map(s=>s.trim()).includes(person));
+  const now=new Date();
+  const dateStr=`${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')}`;
+  const tod=now.toISOString().split('T')[0];
+  const isComplete=t=>t.status==='完成'||t.pct===100;
+  const statusColor={'完成':'#10b981','進行中':'#1a8f68','審核中':'#f59e0b','待辦':'#94a3b8'};
+  const grouped={};
+  myTasks.forEach(t=>{if(!grouped[t.project])grouped[t.project]=[];grouped[t.project].push(t);});
+  const rows=Object.entries(grouped).map(([pn,ts])=>{
+    const pMeta=projectMeta[pn]||{};
+    const taskRows=ts.map(t=>{
+      const isOv=t.date&&t.date<tod&&!isComplete(t);
+      return`<tr style="border-bottom:1px solid #f1f5f9">
+        <td style="padding:8px 12px;font-size:13px;color:#1e293b">${t.task||'（未命名）'}</td>
+        <td style="padding:8px 12px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="flex:1;height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden">
+              <div style="width:${t.pct||0}%;height:100%;background:#1a8f68;border-radius:3px"></div>
+            </div>
+            <span style="font-size:12px;font-weight:600;color:#475569;width:32px">${t.pct||0}%</span>
+          </div>
+        </td>
+        <td style="padding:8px 12px;text-align:center">
+          <span style="background:${statusColor[t.status||'待辦']}22;color:${statusColor[t.status||'待辦']};padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600">${t.status||'待辦'}</span>
+        </td>
+        <td style="padding:8px 12px;text-align:center;font-size:12px;color:${isOv?'#ef4444':'#64748b'};font-weight:${isOv?'600':'400'}">${t.date?t.date.slice(5).replace('-','/'):'—'}${isOv?' ⚠':''}</td>
+        <td style="padding:8px 12px;font-size:12px;color:#94a3b8">${t.note||''}</td>
+      </tr>`;
+    }).join('');
+    return`<div style="margin-bottom:20px">
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden">
+        <div style="padding:10px 16px;background:#1a8f68;color:#fff">
+          <div style="font-size:14px;font-weight:600">${pn}</div>
+          ${pMeta.client?`<div style="font-size:11px;opacity:.8;margin-top:2px">👤 ${pMeta.client}${pMeta.address?' · 📍'+pMeta.address:''}</div>`:''}
+        </div>
+        <table style="width:100%;border-collapse:collapse">
+          <thead><tr style="background:#f1f5f9">
+            <th style="padding:8px 12px;text-align:left;font-size:11px;color:#64748b;font-weight:500">工作項目</th>
+            <th style="padding:8px 12px;font-size:11px;color:#64748b;font-weight:500;width:160px">完成度</th>
+            <th style="padding:8px 12px;text-align:center;font-size:11px;color:#64748b;font-weight:500;width:80px">狀態</th>
+            <th style="padding:8px 12px;text-align:center;font-size:11px;color:#64748b;font-weight:500;width:70px">截止日</th>
+            <th style="padding:8px 12px;text-align:left;font-size:11px;color:#64748b;font-weight:500;width:160px">備註</th>
+          </tr></thead>
+          <tbody>${taskRows}</tbody>
+        </table>
+      </div>
+    </div>`;
+  }).join('');
+  const done=myTasks.filter(t=>isComplete(t)).length;
+  const inprog=myTasks.filter(t=>t.status==='進行中').length;
+  const avg=myTasks.length?Math.round(myTasks.reduce((a,t)=>a+(t.pct||0),0)/myTasks.length):0;
+  const html=`<!DOCTYPE html><html lang="zh-TW"><head>
+<meta charset="UTF-8"><title>${person} 工作進度報告</title>
+<style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:'Noto Sans TC',-apple-system,sans-serif;background:#fff;color:#1e293b;padding:32px;}@media print{body{padding:16px;}.no-print{display:none;}}</style>
+</head><body><div style="max-width:820px;margin:0 auto">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #1a8f68">
+    <div>
+      <div style="font-size:11px;color:#94a3b8;margin-bottom:4px">黃琮福建築師事務所 — 工作進度報告</div>
+      <div style="font-size:24px;font-weight:700">${person}</div>
+      <div style="font-size:12px;color:#64748b;margin-top:4px">匯出日期：${dateStr}</div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <div style="text-align:center;padding:10px 14px;background:#f0fdf4;border-radius:8px">
+        <div style="font-size:20px;font-weight:700;color:#1a8f68">${avg}%</div>
+        <div style="font-size:10px;color:#64748b;margin-top:2px">平均進度</div>
+      </div>
+      <div style="text-align:center;padding:10px 14px;background:#f8fafc;border-radius:8px">
+        <div style="font-size:20px;font-weight:700">${myTasks.length}</div>
+        <div style="font-size:10px;color:#64748b;margin-top:2px">總任務</div>
+      </div>
+      <div style="text-align:center;padding:10px 14px;background:#fff7ed;border-radius:8px">
+        <div style="font-size:20px;font-weight:700;color:#f59e0b">${inprog}</div>
+        <div style="font-size:10px;color:#64748b;margin-top:2px">進行中</div>
+      </div>
+      <div style="text-align:center;padding:10px 14px;background:#f0fdf4;border-radius:8px">
+        <div style="font-size:20px;font-weight:700;color:#10b981">${done}</div>
+        <div style="font-size:10px;color:#64748b;margin-top:2px">已完成</div>
+      </div>
+    </div>
+  </div>
+  <button class="no-print" onclick="window.print()" style="margin-bottom:16px;padding:8px 20px;background:#1a8f68;color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer">🖨 列印 / 儲存 PDF</button>
+  ${rows||'<p style="color:#94a3b8;text-align:center;padding:32px">此人員目前沒有工作項目</p>'}
+</div></body></html>`;
+  const blob=new Blob([html],{type:'text/html;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`${person}-工作進度-${dateStr.replace(/\//g,'')}.html`;
+  a.click();URL.revokeObjectURL(a.href);
+  toast(`${person} 的報告已下載 ✓`);
+};
 
 // ── Mobile nav ──
 window.toggleMobileNav=function(){
