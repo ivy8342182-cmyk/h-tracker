@@ -1178,11 +1178,17 @@ function renderKanban(pjs,grps){
             </div>
             <div class="ap-wrap">
               <button class="k-card-folder-btn" onclick="toggleFolderPicker(event,'fpk_${pn.replace(/[^\w]/g,'_')}')">${pFolder?'📁 '+pFolder.name:'📂 移至'}</button>
-              <div class="ap" id="fpk_${pn.replace(/[^\w]/g,'_')}" style="min-width:150px">
+              <div class="ap" id="fpk_${pn.replace(/[^\w]/g,'_')}" style="min-width:150px" data-pn="${pn.replace(/"/g,'&quot;')}">
                 <div class="ap-head">移至資料夾</div>
-                ${folders.map(f=>`<div class="ap-person ${pFolder&&pFolder.id===f.id?'cur':''}" onclick="assignToFolder(event,'${pn}','${f.id}','fpk_${pn.replace(/[^\w]/g,'_')}')">${pFolder&&pFolder.id===f.id?'✓ ':''}<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${f.color||'#999'};margin-right:5px"></span>${f.name}</div>`).join('')}
-                ${pFolder?`<div class="ap-person" style="color:var(--text-hint)" onclick="removeFromFolder(event,'${pn}','fpk_${pn.replace(/[^\w]/g,'_')}')">✕ 移出資料夾</div>`:''}
-                <div class="ap-person" style="color:var(--accent);font-size:12px" onclick="createFolderAndAdd(event,'${pn}')">＋ 新增資料夾</div>
+                ${folders.map(f=>`<div class="ap-person ${pFolder&&pFolder.id===f.id?'cur':''}"
+                  data-folder-id="${f.id}" data-picker-id="fpk_${pn.replace(/[^\w]/g,'_')}"
+                  onclick="assignToFolderFromPicker(event,this)">
+                  ${pFolder&&pFolder.id===f.id?'✓ ':''}<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${f.color||'#999'};margin-right:5px"></span>${f.name}
+                </div>`).join('')}
+                ${pFolder?`<div class="ap-person" style="color:var(--text-hint)"
+                  data-picker-id="fpk_${pn.replace(/[^\w]/g,'_')}"
+                  onclick="removeFromFolderFromPicker(event,this)">✕ 移出資料夾</div>`:''}
+                <div class="ap-person" style="color:var(--accent);font-size:12px" onclick="createFolderAndAdd(event,'${pn.replace(/'/g,"\\'")}')">＋ 新增資料夾</div>
               </div>
             </div>
           </div>
@@ -1932,6 +1938,43 @@ function bindPdEvents(){
     wrap.querySelectorAll('.ipct-popup.open,.iproj-dd.open').forEach(p=>p.classList.remove('open'));
   });
 }
+
+window.assignToFolderFromPicker=async function(e,el){
+  e.stopPropagation();
+  const fid=el.dataset.folderId;
+  const pickerId=el.dataset.pickerId;
+  const popup=$id(pickerId);
+  const pname=popup?.dataset.pn;
+  if(!pname||!fid) return;
+  const f=folders.find(x=>x.id===fid);
+  if(!f) return;
+  // Remove from all other folders, add to target
+  const updates=folders.map(fl=>{
+    const projs=(fl.projects||[]).filter(p=>p!==pname);
+    if(fl.id===fid) projs.push(pname);
+    return updateDoc(docFn(db,'folders',fl.id),{projects:projs});
+  });
+  try{
+    await Promise.all(updates);
+    toast(`已移至「${f.name}」✓`);
+    if(popup) popup.classList.remove('open');
+  }catch(err){alert('移動失敗：'+err.message);}
+};
+
+window.removeFromFolderFromPicker=async function(e,el){
+  e.stopPropagation();
+  const pickerId=el.dataset.pickerId;
+  const popup=$id(pickerId);
+  const pname=popup?.dataset.pn;
+  if(!pname) return;
+  const updates=folders.filter(f=>(f.projects||[]).includes(pname))
+    .map(f=>updateDoc(docFn(db,'folders',f.id),{projects:(f.projects||[]).filter(p=>p!==pname)}));
+  try{
+    await Promise.all(updates);
+    toast('已移出資料夾');
+    if(popup) popup.classList.remove('open');
+  }catch(err){alert('移動失敗：'+err.message);}
+};
 
 // ── Folder Management ──
 const FOLDER_COLORS=['#1a8f68','#3b82f6','#8b5cf6','#f59e0b','#ef4444','#ec4899','#14b8a6','#f97316'];
