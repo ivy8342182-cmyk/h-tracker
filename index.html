@@ -1,4 +1,4 @@
-<!-- h-tracker v3.0 build:202605080000 -->
+<!-- h-tracker v3.0 build:202605100515 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -1172,11 +1172,18 @@ function renderKanban(pjs,grps){
   const grid=$id('kanban-grid');
   const ps=persons();
 
-  // Collect all project names: from tasks + from folder lists
+  // Check if any filter is active
+  const fp=$id('fp')?.value, fs=$id('fs')?.value, fpr=$id('fpr')?.value;
+  const hasFilter=!!(fp||fs||fpr);
+
+  // When no filter: show all projects including folder ones without tasks
+  // When filter active: only show projects that matched the filter
   const allFolderProjects=new Set(folders.flatMap(f=>f.projects||[]));
-  const allPjs=new Set([...pjs,...allFolderProjects]);
-  // Also ensure grps has entries for folder projects (even empty)
-  allFolderProjects.forEach(pn=>{if(!grps[pn])grps[pn]=[];});
+  const allPjs=hasFilter
+    ? new Set(pjs)  // only filtered projects
+    : new Set([...pjs,...allFolderProjects]);
+  // Ensure grps has entries for folder projects (only when no filter)
+  if(!hasFilter) allFolderProjects.forEach(pn=>{if(!grps[pn])grps[pn]=[];});
 
   if(!allPjs.size){grid.innerHTML='<div class="empty"><p style="font-size:32px">📋</p><p>目前沒有工作項目，點右上角新增吧！</p></div>';return;}
 
@@ -1246,12 +1253,15 @@ function renderKanban(pjs,grps){
   // Build sections: folders first, then uncategorised
   const allFolderProjectsSet=new Set(folders.flatMap(f=>f.projects||[]));
   const uncatProjs=sortProjects([...allPjs].filter(pn=>!allFolderProjectsSet.has(pn)), grps);
+  // When filter active, also show filtered folder projects under their folders
 
   let html='<div class="kanban-section">';
 
   // Render each folder
   folders.forEach((f,fi)=>{
-    const fProjs=sortProjects(f.projects||[], grps);  // show ALL, sorted
+    const fProjs=sortProjects(
+      hasFilter ? (f.projects||[]).filter(pn=>allPjs.has(pn)) : (f.projects||[]),
+      grps);  // when filter active, only show matching projects
     const fProjsWithTasks=fProjs.filter(pn=>grps[pn]); // for stats only
     const isOpen=!collapsed['folder_'+f.id];
     const fView=folderViews[f.id]||'kanban'; // 'kanban' or 'list'
