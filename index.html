@@ -2440,26 +2440,23 @@ window.saveTask=async function(){
 
 // ── Combobox ──
 const cbi=$id('f-task'),cbd=$id('cb-dd');
-function cbOpen(){
-  cbd.querySelectorAll('.cb-opt').forEach(o=>o.style.display='');
-  cbd.classList.add('open');
-}
-// click on input or arrow always toggles open
-$id('cb-wrap').addEventListener('mousedown',e=>{
-  e.preventDefault(); // prevent blur/focus race
-  if(cbd.classList.contains('open')){cbd.classList.remove('open');}else{cbi.focus();cbOpen();}
-});
-cbi.addEventListener('focus',()=>{ cbOpen(); });
+let _cbJustSelected=false;
+function cbShowAll(){cbd.querySelectorAll('.cb-opt').forEach(o=>o.style.display='');}
+cbi.addEventListener('focus',()=>{if(_cbJustSelected){_cbJustSelected=false;return;}cbShowAll();cbd.classList.add('open');});
+cbi.addEventListener('click',()=>{cbShowAll();cbd.classList.add('open');});
+$id('cb-wrap').querySelector('.cb-arrow').addEventListener('click',()=>{cbShowAll();cbd.classList.toggle('open');});
 cbi.addEventListener('input',()=>{
   cbd.classList.add('open');const q=cbi.value.toLowerCase();
   cbd.querySelectorAll('.cb-opt').forEach(o=>o.style.display=(!q||o.dataset.v.toLowerCase().includes(q)||o.textContent.toLowerCase().includes(q))?'':'none');
 });
-document.addEventListener('mousedown',e=>{if(!$id('cb-wrap').contains(e.target))cbd.classList.remove('open');});
+document.addEventListener('click',e=>{if(!$id('cb-wrap').contains(e.target))cbd.classList.remove('open');});
 window.selectTask=function(el){
   cbi.value=el.dataset.v;
   cbd.querySelectorAll('.cb-opt').forEach(o=>o.classList.remove('sel'));
   el.classList.add('sel');
   cbd.classList.remove('open');
+  _cbJustSelected=true;
+  cbi.focus();
 };
 
 // ── Assign ──
