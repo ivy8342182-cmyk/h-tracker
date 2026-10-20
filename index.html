@@ -1005,7 +1005,11 @@ function persons(){
   const fromTasks=[...new Set(tasks.flatMap(t=>(t.assignee||'').split(',').map(s=>s.trim())).filter(Boolean))];
   return [...new Set([...fromMembers,...fromTasks])].sort();
 }
-function projects(){return[...new Set(tasks.map(t=>t.project).filter(Boolean))].sort();}
+function projects(){
+  const fromTasks=tasks.map(t=>t.project).filter(Boolean);
+  const fromFolders=folders.flatMap(f=>f.projects||[]);
+  return[...new Set([...fromTasks,...fromFolders])].sort();
+}
 
 function rebuildProjectSelect(prs){
   const sel=$id('f-project');
