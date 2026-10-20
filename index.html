@@ -1192,7 +1192,8 @@ function renderKanban(pjs,grps){
     return pn.split('').map(c=>{const code=c.charCodeAt(0);return code<128&&/[a-zA-Z0-9]/.test(c)?c:'_'+code+'_';}).join('').slice(0,60);
   }
   function kCard(pn){
-    const ts=(grps[pn]||[]).slice().sort((a,b)=>(b.createdAt||b.updatedAt||'0').localeCompare(a.createdAt||a.updatedAt||'0'));
+    const toMs=v=>!v?0:typeof v==='object'&&v.toMillis?v.toMillis():new Date(v).getTime()||0;
+    const ts=(grps[pn]||[]).slice().sort((a,b)=>toMs(b.createdAt||b.updatedAt)-toMs(a.createdAt||a.updatedAt));
     const asgns=[...new Set(ts.flatMap(t=>(t.assignee||'').split(',').map(s=>s.trim())).filter(Boolean))];
     const avg=ts.length?Math.round(ts.reduce((a,t)=>a+(t.pct||0),0)/ts.length):0;
     const nd=ts.filter(t=>t.date).sort((a,b)=>new Date(a.date)-new Date(b.date))[0];
