@@ -293,7 +293,7 @@ select:focus,input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 
 /* ── Guide page ── */
 .guide-section{margin-bottom:2rem;}
 .guide-section-head{display:flex;align-items:center;gap:12px;margin-bottom:1rem;padding-bottom:.625rem;border-bottom:2px solid var(--border);}
-.guide-icon{font-size:22px;width:40px;height:40px;background:var(--surface-2);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.guide-icon{font-size:18px;width:40px;height:40px;background:var(--surface-2);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .guide-title{font-size:16px;font-weight:700;color:var(--text);}
 .guide-sub{font-size:12px;color:var(--text-hint);margin-top:2px;}
 .guide-cards{display:flex;flex-direction:column;gap:10px;}
@@ -303,6 +303,10 @@ select:focus,input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 
 .guide-card-body{font-size:12px;color:var(--text-muted);line-height:1.65;}
 .guide-tag{display:inline-block;font-size:11px;padding:1px 8px;border-radius:20px;font-weight:500;}
 .guide-tag-orange{background:rgba(249,115,22,.15);color:#ea580c;border:1px solid rgba(249,115,22,.3);}
+.guide-idx-card{display:flex;flex-direction:column;gap:4px;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:12px;text-decoration:none;cursor:pointer;transition:border-color .15s,box-shadow .15s;}
+.guide-idx-card:hover{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-light);}
+.guide-idx-title{font-size:13px;font-weight:600;color:var(--text);}
+.guide-idx-desc{font-size:11px;color:var(--text-hint);}
 .pd-note{font-size:11px;color:var(--text-hint);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .pd-phase-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
 .pd-status-badge{cursor:pointer;font-size:10px;padding:2px 8px;flex-shrink:0;transition:opacity .15s;white-space:nowrap;}
@@ -794,22 +798,36 @@ textarea.fc{resize:vertical;min-height:68px;}
 
         <!-- Quick index -->
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:2rem">
-          ${[
-            ['⊞','專案總覽','看板/清單瀏覽所有案件','#g-project'],
-            ['☑','工作進度','個人任務與週進度','#g-mytasks'],
-            ['📅','行事曆','依日期檢視截止任務','#g-cal'],
-            ['👥','人員管理','查看各人工作量','#g-member'],
-            ['📁','資料夾','案件分類管理','#g-folder'],
-            ['➕','新增進度','快速新增工作項目','#g-add'],
-          ].map(([icon,title,desc,href])=>`
-            <a href="${href}" onclick="event.preventDefault();document.querySelector('${href}').scrollIntoView({behavior:'smooth'})"
-              style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:12px;text-decoration:none;transition:all .15s;cursor:pointer"
-              onmouseover="this.style.borderColor='var(--accent)';this.style.boxShadow='0 0 0 2px var(--accent-light)'"
-              onmouseout="this.style.borderColor='var(--border)';this.style.boxShadow=''">
-              <span style="font-size:20px">${icon}</span>
-              <span style="font-size:13px;font-weight:600;color:var(--text)">${title}</span>
-              <span style="font-size:11px;color:var(--text-hint)">${desc}</span>
-            </a>`).join('')}
+          <a class="guide-idx-card" onclick="document.getElementById('g-project').scrollIntoView({behavior:'smooth'})">
+            <span style="font-size:20px">⊞</span>
+            <span class="guide-idx-title">專案總覽</span>
+            <span class="guide-idx-desc">看板/清單瀏覽所有案件</span>
+          </a>
+          <a class="guide-idx-card" onclick="document.getElementById('g-mytasks').scrollIntoView({behavior:'smooth'})">
+            <span style="font-size:20px">☑</span>
+            <span class="guide-idx-title">工作進度</span>
+            <span class="guide-idx-desc">個人任務與週進度</span>
+          </a>
+          <a class="guide-idx-card" onclick="document.getElementById('g-cal').scrollIntoView({behavior:'smooth'})">
+            <span style="font-size:20px">📅</span>
+            <span class="guide-idx-title">行事曆</span>
+            <span class="guide-idx-desc">依日期檢視截止任務</span>
+          </a>
+          <a class="guide-idx-card" onclick="document.getElementById('g-member').scrollIntoView({behavior:'smooth'})">
+            <span style="font-size:20px">👥</span>
+            <span class="guide-idx-title">人員管理</span>
+            <span class="guide-idx-desc">查看各人工作量</span>
+          </a>
+          <a class="guide-idx-card" onclick="document.getElementById('g-folder').scrollIntoView({behavior:'smooth'})">
+            <span style="font-size:20px">📁</span>
+            <span class="guide-idx-title">資料夾</span>
+            <span class="guide-idx-desc">案件分類管理</span>
+          </a>
+          <a class="guide-idx-card" onclick="document.getElementById('g-add').scrollIntoView({behavior:'smooth'})">
+            <span style="font-size:20px">➕</span>
+            <span class="guide-idx-title">新增進度</span>
+            <span class="guide-idx-desc">快速新增工作項目</span>
+          </a>
         </div>
 
         <!-- Section helper macro -->
@@ -1008,22 +1026,31 @@ textarea.fc{resize:vertical;min-height:68px;}
         <!-- Tips -->
         <div style="background:rgba(26,143,104,.07);border:1px solid rgba(26,143,104,.2);border-radius:12px;padding:1.25rem 1.5rem;margin-top:.5rem">
           <div style="font-size:13px;font-weight:600;color:var(--accent);margin-bottom:.75rem">💡 使用小技巧</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px">
-            ${[
-              ['🔍','搜尋功能','點右上角搜尋框，可快速找到任何案件或任務名稱'],
-              ['☁️','雲端同步','右上角顯示「即時同步」代表資料已儲存至雲端'],
-              ['📱','手機可用','網站支援手機瀏覽，外出時也能隨時查看與更新'],
-              ['📦','定期封存','建議每月將已完成的任務封存，保持個人頁面整潔'],
-              ['🗂','分類管理','善用資料夾依年度或案件類型分類，方便日後查找'],
-              ['💾','備份資料','右上角「備份」按鈕可匯出所有資料，定期備份建議'],
-            ].map(([icon,title,body])=>`
-              <div style="display:flex;gap:8px;align-items:flex-start">
-                <span style="font-size:16px;flex-shrink:0;line-height:1.4">${icon}</span>
-                <div>
-                  <div style="font-size:12px;font-weight:600;color:var(--text)">${title}</div>
-                  <div style="font-size:11px;color:var(--text-hint);line-height:1.5;margin-top:1px">${body}</div>
-                </div>
-              </div>`).join('')}
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 16px">
+            <div style="display:flex;gap:8px;align-items:flex-start">
+              <span style="font-size:16px;flex-shrink:0;line-height:1.4">🔍</span>
+              <div><div style="font-size:12px;font-weight:600;color:var(--text)">搜尋功能</div><div style="font-size:11px;color:var(--text-hint);line-height:1.5;margin-top:1px">點右上角搜尋框，可快速找到任何案件或任務名稱</div></div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:flex-start">
+              <span style="font-size:16px;flex-shrink:0;line-height:1.4">☁️</span>
+              <div><div style="font-size:12px;font-weight:600;color:var(--text)">雲端同步</div><div style="font-size:11px;color:var(--text-hint);line-height:1.5;margin-top:1px">右上角顯示「即時同步」代表資料已儲存至雲端</div></div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:flex-start">
+              <span style="font-size:16px;flex-shrink:0;line-height:1.4">📱</span>
+              <div><div style="font-size:12px;font-weight:600;color:var(--text)">手機可用</div><div style="font-size:11px;color:var(--text-hint);line-height:1.5;margin-top:1px">網站支援手機瀏覽，外出時也能隨時查看與更新</div></div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:flex-start">
+              <span style="font-size:16px;flex-shrink:0;line-height:1.4">📦</span>
+              <div><div style="font-size:12px;font-weight:600;color:var(--text)">定期封存</div><div style="font-size:11px;color:var(--text-hint);line-height:1.5;margin-top:1px">建議每月將已完成的任務封存，保持個人頁面整潔</div></div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:flex-start">
+              <span style="font-size:16px;flex-shrink:0;line-height:1.4">🗂</span>
+              <div><div style="font-size:12px;font-weight:600;color:var(--text)">分類管理</div><div style="font-size:11px;color:var(--text-hint);line-height:1.5;margin-top:1px">善用資料夾依年度或案件類型分類，方便日後查找</div></div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:flex-start">
+              <span style="font-size:16px;flex-shrink:0;line-height:1.4">💾</span>
+              <div><div style="font-size:12px;font-weight:600;color:var(--text)">備份資料</div><div style="font-size:11px;color:var(--text-hint);line-height:1.5;margin-top:1px">右上角「備份」按鈕可匯出所有資料，定期備份建議</div></div>
+            </div>
           </div>
         </div>
 
