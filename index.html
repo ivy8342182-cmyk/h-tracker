@@ -292,6 +292,18 @@ select:focus,input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 
 .pd-tname-edit.struck{color:var(--text-hint);text-decoration:line-through;}
 .pd-note{font-size:11px;color:var(--text-hint);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .pd-phase-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.pd-status-badge{cursor:pointer;font-size:10px;padding:2px 8px;flex-shrink:0;transition:opacity .15s;white-space:nowrap;}
+.pd-status-badge:hover{opacity:.75;}
+.pd-tr-done td{opacity:.6;}
+.pd-tr-done:hover td{opacity:1;}
+.pd-person-btn{display:flex;flex-wrap:wrap;gap:4px;align-items:center;background:none;border:1px solid var(--border);border-radius:6px;padding:3px 8px;cursor:pointer;font-family:inherit;max-width:180px;}
+.pd-person-btn:hover{background:var(--surface-2);}
+.pd-person-chip{font-size:11px;color:var(--text);font-weight:500;white-space:nowrap;line-height:1.4;}
+.pd-person-chip+.pd-person-chip::before{content:'、';font-size:11px;color:var(--text-hint);margin-left:-3px;}
+.idate-hidden{position:absolute;opacity:0;width:0;height:0;pointer-events:none;}
+.td-date{padding:9px 10px;white-space:nowrap;min-width:80px;cursor:pointer;}
+.td-date:hover .idate-hidden{pointer-events:auto;}
+.pd-td-main{width:99%;}
 
 /* ── My Tasks person chip bar ── */
 .mt-person-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: .75rem 2rem; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex-shrink: 0; }
@@ -1878,29 +1890,35 @@ function renderPDetail(){
   const rows=ts.length?ts.map(t=>{
     const phaseColor=PHASE_COLORS[t.task]||'var(--border-strong)';
     const isOv=ov(t.date)&&t.pct<100;
+    const isDone=t.status==='完成'||t.pct===100;
     const projOpts=`${t.assignee?`<div class="iproj-opt" data-proj="" data-id="${t.id}" style="color:var(--text-hint)">✕ 移除</div>`:''}
       ${allPs.map(p=>`<div class="iproj-opt ${t.assignee===p?'cur':''}" data-proj="${p}" data-id="${t.id}">${t.assignee===p?'✓ ':''} ${p}</div>`).join('')}`;
-    return`<tr data-id="${t.id}">
-      <td style="width:32px;padding:0 4px 0 8px;vertical-align:middle">
+    const assigneeNames=(t.assignee||'').split(',').map(s=>s.trim()).filter(Boolean);
+    const dateDisplay=t.date?t.date.slice(5).replace('-','/'):'—';
+    return`<tr data-id="${t.id}" class="pd-tr${isDone?' pd-tr-done':''}">
+      <td style="width:32px;padding:0 4px 0 10px;vertical-align:middle">
         <input type="checkbox" class="pd-row-cb" data-id="${t.id}"
           style="width:15px;height:15px;accent-color:var(--accent);cursor:pointer"
           onchange="pdCbChange(this)">
       </td>
-      <td><div class="lt-name" style="padding-left:4px">
-        <div class="chk ${t.pct===100?'done':''}" data-id="${t.id}" data-pct="${t.pct||0}" onclick="quickToggle('${t.id}',${t.pct||0})"></div>
-        <span class="pd-phase-dot" style="background:${phaseColor}" title="${t.task||''}"></span>
-        <div style="flex:1;min-width:0">
-          <input class="pd-tname-edit ${t.pct===100?'struck':''}"
-            value="${(t.task||'').replace(/"/g,'&quot;')}"
-            data-id="${t.id}" data-orig="${(t.task||'').replace(/"/g,'&quot;')}"
-            spellcheck="false" placeholder="工作項目名稱">
-          ${t.note?`<div class="pd-note">${t.note}</div>`:''}
+      <td class="pd-td-main">
+        <div class="lt-name" style="padding:10px 10px 10px 4px;gap:10px">
+          <div class="chk ${isDone?'done':''}" data-id="${t.id}" data-pct="${t.pct||0}" onclick="quickToggle('${t.id}',${t.pct||0})"></div>
+          <span class="pd-phase-dot" style="background:${phaseColor}" title="${t.task||''}"></span>
+          <div style="flex:1;min-width:0">
+            <input class="pd-tname-edit ${isDone?'struck':''}"
+              value="${(t.task||'').replace(/"/g,'&quot;')}"
+              data-id="${t.id}" data-orig="${(t.task||'').replace(/"/g,'&quot;')}"
+              spellcheck="false" placeholder="工作項目名稱">
+            ${t.note?`<div class="pd-note">${t.note}</div>`:''}
+          </div>
+          <span class="badge ${sc(t.status||'待辦')} pd-status-badge" title="點擊切換狀態" onclick="event.stopPropagation();cycleStatus('${t.id}','${t.status||'待辦'}')">${t.status||'待辦'}</span>
         </div>
-      </div></td>
+      </td>
       <td class="td-pct">
         <div class="ipct-wrap">
           <div class="ipct-btn" data-id="${t.id}">
-            <div class="pct-bar" style="width:52px"><div class="pct-fill" style="width:${t.pct||0}%"></div></div>
+            <div class="pct-bar" style="width:56px"><div class="pct-fill" style="width:${t.pct||0}%"></div></div>
             <span class="pct-num">${t.pct||0}%</span>
           </div>
           <div class="ipct-popup" id="ipct_${t.id}">
@@ -1911,16 +1929,21 @@ function renderPDetail(){
       </td>
       <td class="td-person">
         <div class="iproj-wrap">
-          ${t.assignee
-            ?`<button class="iproj-btn" data-id="${t.id}" style="font-size:11px">
-                <div class="avatars" style="flex-direction:row;margin-right:2px">${(t.assignee||'').split(',').map(s=>s.trim()).filter(Boolean).slice(0,3).map(n=>`<span class="av ${gav(n)}" style="width:18px;height:18px;font-size:8px;border:1.5px solid var(--surface);margin-left:-5px;flex-shrink:0">${ini(n)}</span>`).join('')}</div>
-                ${t.assignee}</button>`
+          ${assigneeNames.length
+            ?`<button class="iproj-btn pd-person-btn" data-id="${t.id}">
+                ${assigneeNames.map(n=>`<span class="pd-person-chip">${n}</span>`).join('')}
+              </button>`
             :`<span class="iproj-none" data-id="${t.id}" style="font-size:11px">＋ 指派</span>`}
           <div class="iproj-dd" id="iproj_${t.id}">${projOpts}</div>
         </div>
       </td>
-      <td class="td-date">
-        <input class="idate-input ${isOv?'overdue':''}" type="date" value="${t.date||''}" data-id="${t.id}">
+      <td class="td-date" onclick="this.querySelector('.idate-input')?.showPicker?.()">
+        <div style="display:flex;align-items:center;gap:5px;position:relative">
+          <span style="font-size:11px;color:${isOv?'#b84040':isDone?'var(--text-hint)':'var(--text-muted)'};font-weight:${isOv?'600':'500'}">
+            ${isOv?'⚠ ':isDone?'✓ ':'📅 '}${dateDisplay}
+          </span>
+          <input class="idate-input" type="date" value="${t.date||''}" data-id="${t.id}" style="position:absolute;inset:0;opacity:0;width:100%;cursor:pointer">
+        </div>
       </td>
       <td style="padding:8px 10px;white-space:nowrap">
         <button class="btn" style="font-size:11px;padding:3px 8px" onclick="copyTask('${t.id}')">複製</button>
@@ -1928,14 +1951,15 @@ function renderPDetail(){
       </td>
     </tr>`;
   }).join('')
-  :`<tr><td colspan="5" style="padding:2rem;text-align:center;font-size:13px;color:var(--text-hint)">目前沒有工作項目，點右上角新增</td></tr>`;
+  :`<tr><td colspan="6" style="padding:2.5rem;text-align:center;font-size:13px;color:var(--text-hint)">目前沒有工作項目，點右上角新增</td></tr>`;
 
   $id('pd-wrap').innerHTML=barHtml+`<table class="lt">
     <thead><tr>
-      <th style="width:99%;padding-left:18px">工作項目</th>
-      <th>完成度</th>
-      <th>負責人</th>
-      <th>截止日期</th>
+      <th style="width:28px"></th>
+      <th style="padding-left:8px">工作項目</th>
+      <th style="min-width:100px">完成度</th>
+      <th style="min-width:120px">負責人員</th>
+      <th style="min-width:80px">截止日期</th>
       <th></th>
     </tr></thead>
     <tbody>${rows}</tbody>
