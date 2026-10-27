@@ -117,6 +117,8 @@ select:focus,input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 
 .kanban{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px;padding:1.25rem 2rem 2rem;}
 .k-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;transition:all .2s;box-shadow:var(--shadow-sm);position:relative;}
 .k-card:hover{box-shadow:var(--shadow-md);transform:translateY(-1px);border-color:rgba(0,0,0,.12);}
+.k-card-active{border-color:#f97316!important;box-shadow:0 0 0 2px rgba(249,115,22,.18),var(--shadow-sm)!important;}
+.k-card-active:hover{box-shadow:0 0 0 2px rgba(249,115,22,.28),var(--shadow-md)!important;}
 .k-card::before{content:'';position:absolute;top:0;left:1rem;right:1rem;height:2px;border-radius:0 0 2px 2px;background:linear-gradient(90deg,var(--accent) 0%,transparent 100%);opacity:0;transition:opacity .2s;}
 .k-card:hover::before{opacity:.5;}
 .k-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;gap:8px;}
@@ -1218,7 +1220,13 @@ function renderKanban(pjs,grps){
       ts.some(t=>t.status==='案件暫緩')?'案件暫緩':
       ts.length>0?'待辦':'待辦';
     const pnSafe=pn.replace(/"/g,'&quot;');
-    return`<div class="k-card" draggable="true"
+    // ── Orange border: project has active (non-done) tasks due this week ──
+    const todStr=new Date().toISOString().split('T')[0];
+    const nwStr=(()=>{const d=new Date();d.setDate(d.getDate()+7);return d.toISOString().split('T')[0];})();
+    const hasWeekTask=ts.some(t=>t.status!=='完成'&&t.pct!==100&&t.date&&t.date>=todStr&&t.date<=nwStr);
+    const hasActiveInProgress=ts.some(t=>t.status==='進行中');
+    const cardHighlight=hasWeekTask||hasActiveInProgress;
+    return`<div class="k-card${cardHighlight?' k-card-active':''}" draggable="true"
       data-pn="${pnSafe}"
       ondragstart="dragProjectFromCard(event)"
       ondragend="dragProjectEnd(event)"
