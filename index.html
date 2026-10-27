@@ -136,6 +136,8 @@ select:focus,input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 
 .k-pct{font-size:10px;font-weight:600;min-width:24px;text-align:right;color:var(--text-hint);}
 .k-status-badge{cursor:pointer;font-size:9px;padding:1px 6px;flex-shrink:0;transition:opacity .15s;}
 .k-status-badge:hover{opacity:.75;}
+.mt-archive-btn{background:none;border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:13px;padding:2px 6px;color:var(--text-muted);transition:all .15s;flex-shrink:0;}
+.mt-archive-btn:hover{background:rgba(109,40,217,.1);border-color:rgba(109,40,217,.3);color:#6d28d9;}
 .k-footer{display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid var(--border);}
 .avatars{display:flex;flex-direction:row-reverse;justify-content:flex-end;}
 .avatars .av{margin-left:-8px;border:2px solid var(--surface);transition:transform .15s;}
@@ -1466,7 +1468,9 @@ window.renderMyTasks=function(){
     return;
   }
 
-  const my=tasks.filter(t=>(t.assignee||'').split(',').map(s=>s.trim()).includes(person));
+  const showArchived=window._mtShowArchived||false;
+  const my=tasks.filter(t=>(t.assignee||'').split(',').map(s=>s.trim()).includes(person)&&(showArchived?t.archived===true:!t.archived));
+  const archivedCount=tasks.filter(t=>(t.assignee||'').split(',').map(s=>s.trim()).includes(person)&&t.archived===true).length;
   const now=new Date();
   const tod=now.toISOString().split('T')[0];
   const nw=new Date(); nw.setDate(now.getDate()+7);
@@ -1481,7 +1485,7 @@ window.renderMyTasks=function(){
   const todayTs   = my.filter(t=>!isComplete(t)&&t.date===tod);
   const weekTs    = my.filter(t=>!isComplete(t)&&t.date>tod&&t.date<=nws);
   const laterTs   = my.filter(t=>!isComplete(t)&&!t.date);
-  const doneTs    = my.filter(t=>isComplete(t));
+  const doneTs    = showArchived ? my.filter(t=>isComplete(t)) : my.filter(t=>isComplete(t)&&!t.archived);
   // this week = today + week (for summary)
   const thisWeekAll=[...todayTs,...weekTs,...overdue];
   const avgWeekPct= thisWeekAll.length ? Math.round(thisWeekAll.reduce((a,t)=>a+(t.pct||0),0)/thisWeekAll.length) : 0;
@@ -1509,7 +1513,7 @@ window.renderMyTasks=function(){
   }
 
   // ── Row renderer (inline editable) ──
-  function mtRow2(t,showDate=true){
+  function mtRow2(t,showDate=true,isArchivedView=false){
     const pjs=projects();
     const projOpts=pjs.map(p=>`<div class="iproj-opt${t.project===p?' cur':''}" data-proj="${p}" data-id="${t.id}">${t.project===p?'✓ ':''} ${p}</div>`).join('');
     const dateStr=t.date?t.date.slice(5).replace('-','/'):'—';
@@ -1536,6 +1540,7 @@ window.renderMyTasks=function(){
         ${showDate?`<div class="mt-row-date ${isOv?'overdue':''}">
           <input class="idate-input ${isOv?'overdue':''}" type="date" value="${t.date||''}" data-id="${t.id}" style="width:88px">
         </div>`:''}
+        ${!showDate?`<button class="mt-archive-btn" title="${isArchivedView?'解除封存':'封存此任務'}" onclick="event.stopPropagation();${isArchivedView?`unarchiveTask('${t.id}')`:`archiveTask('${t.id}')`}">${isArchivedView?'📤':'📦'}</button>`:''}
         <div class="ipct-wrap">
           ${ring(t.pct||0,t.id)}
           <div class="ipct-popup" id="ipct_${t.id}">
@@ -1611,29 +1616,35 @@ window.renderMyTasks=function(){
       <div id="mtb_week">${block('week','📅','本週工作內容',weekLabel,[...overdue,...todayTs,...weekTs],`openModalPre('person','${person}','${nws}')`)}</div>
       <div id="mtb_later">${block('later','🗂','待處理','尚未設定日期的任務',laterTs,`openModalPre('person','${person}','')`,true)}</div>
     </div>
-    ${doneTs.length?`<div class="mt-block mt-block-full" id="mtb_done">
+    ${(doneTs.length||archivedCount)?`<div class="mt-block mt-block-full" id="mtb_done">
       <div class="mt-block-header">
         <div class="mt-block-title">
-          <span class="mt-block-icon">✅</span>
+          <span class="mt-block-icon">${showArchived?'📦':'✅'}</span>
           <div>
-            <div class="mt-block-name">已完成</div>
+            <div class="mt-block-name">${showArchived?'封存的任務':'已完成'}</div>
           </div>
         </div>
-        <div style="display:flex;align-items:center;gap:8px">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           <span class="mt-block-count">${doneTs.length} 項</span>
-          <button class="btn btn-danger" style="font-size:11px;padding:3px 10px" id="mt-done-select-btn" onclick="toggleDoneSelectMode()">☑ 多選刪除</button>
+          ${archivedCount&&!showArchived?`<button class="btn" style="font-size:11px;padding:3px 10px;background:rgba(109,40,217,.1);color:#6d28d9;border-color:rgba(109,40,217,.25)" onclick="toggleMtArchived()">📦 封存 (${archivedCount})</button>`:''}
+          ${showArchived?`<button class="btn" style="font-size:11px;padding:3px 10px" onclick="toggleMtArchived()">← 返回</button>`:''}
+          <button class="btn btn-danger" style="font-size:11px;padding:3px 10px" id="mt-done-select-btn" onclick="toggleDoneSelectMode()">☑ 多選${showArchived?'解封/刪除':'封存/刪除'}</button>
         </div>
       </div>
       <div id="mt-done-select-bar" style="display:none;padding:6px 1.125rem;background:rgba(184,64,64,.06);border-bottom:1px solid rgba(184,64,64,.15);align-items:center;gap:8px">
         <span id="mt-done-count" style="font-size:12px;font-weight:500;color:var(--text)">已選 0 項</span>
         <button class="btn" style="font-size:11px;padding:2px 8px" onclick="selectAllDone()">全選</button>
         <button class="btn" style="font-size:11px;padding:2px 8px" onclick="deselectAllDone()">取消</button>
-        <button class="btn btn-danger" style="font-size:11px;padding:2px 8px;margin-left:auto" onclick="deleteSelectedDone()">刪除選取</button>
+        ${showArchived
+          ?`<button class="btn" style="font-size:11px;padding:2px 8px;background:rgba(109,40,217,.1);color:#6d28d9;border-color:rgba(109,40,217,.25);margin-left:auto" onclick="unarchiveSelectedDone()">解除封存</button>
+            <button class="btn btn-danger" style="font-size:11px;padding:2px 8px" onclick="deleteSelectedDone()">刪除選取</button>`
+          :`<button class="btn" style="font-size:11px;padding:2px 8px;background:rgba(109,40,217,.1);color:#6d28d9;border-color:rgba(109,40,217,.25);margin-left:auto" onclick="archiveSelectedDone()">📦 封存選取</button>
+            <button class="btn btn-danger" style="font-size:11px;padding:2px 8px" onclick="deleteSelectedDone()">刪除選取</button>`}
       </div>
       <div id="mt-done-list">
-        ${doneTs.map(t=>mtRow2(t,false)).join('')}
+        ${doneTs.map(t=>mtRow2(t,false,showArchived)).join('')}
       </div>
-      <div class="mt-add" onclick="openModalPre('person','${person}','')">＋ 新增任務</div>
+      ${!showArchived?`<div class="mt-add" onclick="openModalPre('person','${person}','')">＋ 新增任務</div>`:''}
     </div>`:''}
 
   </div>`;
@@ -3252,6 +3263,38 @@ window.deleteSelectedDone=async function(){
     toast(`已刪除 ${doneSelected.size} 個任務`);
     doneSelectMode=false;doneSelected.clear();
   }catch(e){alert('刪除失敗：'+e.message);}
+};
+
+// ── Archive functions ──
+window._mtShowArchived=false;
+window.toggleMtArchived=function(){
+  window._mtShowArchived=!window._mtShowArchived;
+  doneSelectMode=false;doneSelected.clear();
+  renderMyTasks();
+};
+window.archiveTask=async function(id){
+  try{await updateDoc(docFn(db,'tasks',id),{archived:true,updatedAt:sts()});toast('已封存');}
+  catch(e){alert('封存失敗：'+e.message);}
+};
+window.unarchiveTask=async function(id){
+  try{await updateDoc(docFn(db,'tasks',id),{archived:false,updatedAt:sts()});toast('已解除封存');}
+  catch(e){alert('操作失敗：'+e.message);}
+};
+window.archiveSelectedDone=async function(){
+  if(!doneSelected.size){alert('請先選取要封存的項目');return;}
+  try{
+    await Promise.all([...doneSelected].map(id=>updateDoc(docFn(db,'tasks',id),{archived:true,updatedAt:sts()})));
+    toast(`已封存 ${doneSelected.size} 個任務`);
+    doneSelectMode=false;doneSelected.clear();
+  }catch(e){alert('封存失敗：'+e.message);}
+};
+window.unarchiveSelectedDone=async function(){
+  if(!doneSelected.size){alert('請先選取要解除封存的項目');return;}
+  try{
+    await Promise.all([...doneSelected].map(id=>updateDoc(docFn(db,'tasks',id),{archived:false,updatedAt:sts()})));
+    toast(`已解除封存 ${doneSelected.size} 個任務`);
+    doneSelectMode=false;doneSelected.clear();
+  }catch(e){alert('操作失敗：'+e.message);}
 };
 
 // Legacy stubs (keep for safety)
