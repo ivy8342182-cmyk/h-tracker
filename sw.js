@@ -1,4 +1,4 @@
-const CACHE = 'h-tracker-v202610275';
+const CACHE = 'h-tracker-v202610276';
 
 self.addEventListener('install', e => {
   self.skipWaiting();
