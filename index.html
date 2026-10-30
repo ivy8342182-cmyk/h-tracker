@@ -3747,95 +3747,155 @@ window.doBackupExcel=async function(){
 window.exportPersonReport=function(){
   const person=$id('mt-person').value||window._curMtPerson||'';
   if(!person){alert('請先選擇人員');return;}
-  const myTasks=tasks.filter(t=>(t.assignee||'').split(',').map(s=>s.trim()).includes(person));
+  const myTasks=tasks.filter(t=>(t.assignee||'').split(',').map(s=>s.trim()).includes(person)&&!t.archived);
   const now=new Date();
   const dateStr=`${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')}`;
+  const weekStr=(()=>{const d=new Date(now);const day=d.getDay()||7;d.setDate(d.getDate()-day+1);const e=new Date(d);e.setDate(d.getDate()+6);const fmt=x=>`${x.getMonth()+1}/${x.getDate()}`;return`${fmt(d)} — ${fmt(e)}`;})();
   const tod=now.toISOString().split('T')[0];
+  const nw=(()=>{const d=new Date(now);d.setDate(d.getDate()+7);return d.toISOString().split('T')[0];})();
   const isComplete=t=>t.status==='完成'||t.pct===100;
-  const statusColor={'完成':'#10b981','進行中':'#1a8f68','審核中':'#f59e0b','待辦':'#94a3b8','案件暫緩':'#7c3aed'};
+  const sc={'完成':'#10b981','進行中':'#1a8f68','審核中':'#f59e0b','待辦':'#94a3b8','案件暫緩':'#7c3aed'};
+  // Split into active vs done
+  const activeTasks=myTasks.filter(t=>!isComplete(t));
+  const doneTasks=myTasks.filter(t=>isComplete(t));
+  // This week highlight
+  const weekTasks=activeTasks.filter(t=>t.date&&t.date>=tod&&t.date<=nw);
+  const overdueTasks=activeTasks.filter(t=>t.date&&t.date<tod);
   const grouped={};
-  myTasks.forEach(t=>{if(!grouped[t.project])grouped[t.project]=[];grouped[t.project].push(t);});
-  const rows=Object.entries(grouped).map(([pn,ts])=>{
-    const pMeta=projectMeta[pn]||{};
-    const taskRows=ts.map(t=>{
-      const isOv=t.date&&t.date<tod&&!isComplete(t);
-      return`<tr style="border-bottom:1px solid #f1f5f9">
-        <td style="padding:8px 12px;font-size:13px;color:#1e293b">${t.task||'（未命名）'}</td>
-        <td style="padding:8px 12px">
-          <div style="display:flex;align-items:center;gap:8px">
-            <div style="flex:1;height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden">
-              <div style="width:${t.pct||0}%;height:100%;background:#1a8f68;border-radius:3px"></div>
-            </div>
-            <span style="font-size:12px;font-weight:600;color:#475569;width:32px">${t.pct||0}%</span>
-          </div>
-        </td>
-        <td style="padding:8px 12px;text-align:center">
-          <span style="background:${statusColor[t.status||'待辦']}22;color:${statusColor[t.status||'待辦']};padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600">${t.status||'待辦'}</span>
-        </td>
-        <td style="padding:8px 12px;text-align:center;font-size:12px;color:${isOv?'#ef4444':'#64748b'};font-weight:${isOv?'600':'400'}">${t.date?t.date.slice(5).replace('-','/'):'—'}${isOv?' ⚠':''}</td>
-        <td style="padding:8px 12px;font-size:12px;color:#94a3b8">${t.note||''}</td>
-      </tr>`;
-    }).join('');
-    return`<div style="margin-bottom:20px">
-      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden">
-        <div style="padding:10px 16px;background:#1a8f68;color:#fff">
-          <div style="font-size:14px;font-weight:600">${pn}</div>
-          ${pMeta.client?`<div style="font-size:11px;opacity:.8;margin-top:2px">👤 ${pMeta.client}${pMeta.address?' · 📍'+pMeta.address:''}</div>`:''}
+  activeTasks.forEach(t=>{if(!grouped[t.project])grouped[t.project]=[];grouped[t.project].push(t);});
+  const doneGrouped={};
+  doneTasks.forEach(t=>{if(!doneGrouped[t.project])doneGrouped[t.project]=[];doneGrouped[t.project].push(t);});
+
+  function taskRow(t,isDoneSection){
+    const isOv=t.date&&t.date<tod&&!isComplete(t);
+    const isThisWeek=!isComplete(t)&&t.date&&t.date>=tod&&t.date<=nw;
+    const rowBg=isOv?'#fff5f5':isThisWeek?'#f0fdf9':'#fff';
+    const sColor=sc[t.status||'待辦']||'#94a3b8';
+    return`<tr style="border-bottom:1px solid #f1f5f9;background:${rowBg}">
+      <td style="padding:9px 12px;font-size:13px;color:#1e293b;line-height:1.4">${isOv?'<span style="color:#ef4444;font-size:10px;font-weight:600;margin-right:4px">逾期</span>':isThisWeek?'<span style="color:#1a8f68;font-size:10px;font-weight:600;margin-right:4px">本週</span>':''}${t.task||'（未命名）'}</td>
+      <td style="padding:9px 12px;width:140px">
+        <div style="display:flex;align-items:center;gap:6px">
+          <div style="flex:1;height:5px;background:#e2e8f0;border-radius:3px;overflow:hidden"><div style="width:${t.pct||0}%;height:100%;background:${isDoneSection?'#10b981':'#1a8f68'};border-radius:3px"></div></div>
+          <span style="font-size:11px;font-weight:600;color:#475569;min-width:28px;text-align:right">${t.pct||0}%</span>
         </div>
-        <table style="width:100%;border-collapse:collapse">
-          <thead><tr style="background:#f1f5f9">
-            <th style="padding:8px 12px;text-align:left;font-size:11px;color:#64748b;font-weight:500">工作項目</th>
-            <th style="padding:8px 12px;font-size:11px;color:#64748b;font-weight:500;width:160px">完成度</th>
-            <th style="padding:8px 12px;text-align:center;font-size:11px;color:#64748b;font-weight:500;width:80px">狀態</th>
-            <th style="padding:8px 12px;text-align:center;font-size:11px;color:#64748b;font-weight:500;width:70px">截止日</th>
-            <th style="padding:8px 12px;text-align:left;font-size:11px;color:#64748b;font-weight:500;width:160px">備註</th>
-          </tr></thead>
-          <tbody>${taskRows}</tbody>
-        </table>
+      </td>
+      <td style="padding:9px 12px;text-align:center;white-space:nowrap">
+        <span style="background:${sColor}18;color:${sColor};padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;white-space:nowrap;display:inline-block">${t.status||'待辦'}</span>
+      </td>
+      <td style="padding:9px 12px;text-align:center;font-size:11px;color:${isOv?'#ef4444':'#64748b'};font-weight:${isOv?'600':'400'};white-space:nowrap">${t.date?t.date.slice(5).replace('-','/'):'—'}${isOv?' ⚠':''}</td>
+      <td style="padding:9px 12px;font-size:12px;color:#64748b">${t.note||'—'}</td>
+    </tr>`;
+  }
+
+  function projectBlock(pn,ts,isDoneSection){
+    const pMeta=projectMeta[pn]||{};
+    const headerBg=isDoneSection?'#475569':'#1a8f68';
+    return`<div style="margin-bottom:16px;border-radius:10px;overflow:hidden;border:1px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,.05)">
+      <div style="padding:10px 16px;background:${headerBg};color:#fff">
+        <div style="font-size:13px;font-weight:600">${pn}</div>
+        ${pMeta.client||pMeta.address?`<div style="font-size:11px;opacity:.75;margin-top:2px">${pMeta.client?'👤 '+pMeta.client:''}${pMeta.address?' · 📍'+pMeta.address:''}</div>`:''}
       </div>
+      <table style="width:100%;border-collapse:collapse;background:#fff">
+        <thead><tr style="background:#f8fafc;border-bottom:1px solid #e2e8f0">
+          <th style="padding:7px 12px;text-align:left;font-size:10px;color:#94a3b8;font-weight:500;letter-spacing:.5px">工作項目</th>
+          <th style="padding:7px 12px;font-size:10px;color:#94a3b8;font-weight:500;width:140px;letter-spacing:.5px">完成度</th>
+          <th style="padding:7px 12px;text-align:center;font-size:10px;color:#94a3b8;font-weight:500;width:76px;letter-spacing:.5px">狀態</th>
+          <th style="padding:7px 12px;text-align:center;font-size:10px;color:#94a3b8;font-weight:500;width:60px;letter-spacing:.5px">截止日</th>
+          <th style="padding:7px 12px;text-align:left;font-size:10px;color:#94a3b8;font-weight:500;letter-spacing:.5px">備註</th>
+        </tr></thead>
+        <tbody>${ts.map(t=>taskRow(t,isDoneSection)).join('')}</tbody>
+      </table>
     </div>`;
-  }).join('');
-  const done=myTasks.filter(t=>isComplete(t)).length;
+  }
+
+  const activeRows=Object.entries(grouped).map(([pn,ts])=>projectBlock(pn,ts,false)).join('');
+  const doneRows=Object.entries(doneGrouped).map(([pn,ts])=>projectBlock(pn,ts,true)).join('');
+  const done=doneTasks.length;
   const inprog=myTasks.filter(t=>t.status==='進行中').length;
   const avg=myTasks.length?Math.round(myTasks.reduce((a,t)=>a+(t.pct||0),0)/myTasks.length):0;
+
   const html=`<!DOCTYPE html><html lang="zh-TW"><head>
-<meta charset="UTF-8"><title>${person} 工作進度報告</title>
-<style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:'Noto Sans TC',-apple-system,sans-serif;background:#fff;color:#1e293b;padding:32px;}@media print{body{padding:16px;}.no-print{display:none;}}</style>
-</head><body><div style="max-width:820px;margin:0 auto">
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #1a8f68">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${person} 工作進度報告</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans TC',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f8fafc;color:#1e293b;padding:32px;}
+.page{max-width:840px;margin:0 auto;background:#fff;border-radius:16px;padding:32px;box-shadow:0 4px 24px rgba(0,0,0,.08);}
+.toolbar{display:flex;gap:10px;margin-bottom:24px;align-items:center;}
+.btn-print{padding:9px 22px;background:#1a8f68;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;}
+.btn-print:hover{background:#158055;}
+.hint{font-size:12px;color:#94a3b8;}
+.weekly-box{border:1.5px dashed #1a8f6870;border-radius:10px;padding:16px 18px;margin-bottom:24px;background:#f0fdf9;position:relative;}
+.weekly-label{position:absolute;top:-10px;left:14px;background:#1a8f68;color:#fff;font-size:10px;font-weight:600;padding:2px 10px;border-radius:20px;letter-spacing:.5px;}
+.weekly-edit{width:100%;min-height:80px;border:none;background:transparent;font-family:inherit;font-size:13px;color:#1e293b;line-height:1.7;resize:vertical;outline:none;}
+.weekly-edit:empty::before{content:attr(data-ph);color:#94a3b8;}
+.section-title{font-size:11px;font-weight:600;color:#64748b;letter-spacing:.8px;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.section-title::after{content:'';flex:1;height:1px;background:#e2e8f0;}
+@media print{
+  body{background:#fff;padding:12px;}
+  .page{box-shadow:none;border-radius:0;padding:0;}
+  .no-print{display:none!important;}
+  .weekly-box{border-color:#1a8f6850;}
+  .weekly-label{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+}
+</style>
+</head><body><div class="page">
+
+  <div class="toolbar no-print">
+    <button class="btn-print" onclick="window.print()">🖨 列印 / 儲存 PDF</button>
+    <span class="hint">可在下方「本週說明」欄位填寫說明後再列印</span>
+  </div>
+
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;padding-bottom:20px;border-bottom:2px solid #1a8f68">
     <div>
-      <div style="font-size:11px;color:#94a3b8;margin-bottom:4px">黃琮福建築師事務所 — 工作進度報告</div>
-      <div style="font-size:24px;font-weight:700">${person}</div>
-      <div style="font-size:12px;color:#64748b;margin-top:4px">匯出日期：${dateStr}</div>
+      <div style="font-size:10px;color:#94a3b8;letter-spacing:.5px;margin-bottom:6px">黃琮福建築師事務所 — 工作進度報告</div>
+      <div style="font-size:26px;font-weight:700;letter-spacing:-.5px">${person}</div>
+      <div style="font-size:11px;color:#64748b;margin-top:5px">匯出日期：${dateStr}　　本週：${weekStr}</div>
     </div>
-    <div style="display:flex;gap:10px">
-      <div style="text-align:center;padding:10px 14px;background:#f0fdf4;border-radius:8px">
-        <div style="font-size:20px;font-weight:700;color:#1a8f68">${avg}%</div>
-        <div style="font-size:10px;color:#64748b;margin-top:2px">平均進度</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+      <div style="text-align:center;padding:10px 16px;background:#f0fdf4;border-radius:10px;min-width:64px">
+        <div style="font-size:22px;font-weight:700;color:#1a8f68">${avg}%</div>
+        <div style="font-size:9px;color:#64748b;margin-top:2px;letter-spacing:.3px">平均進度</div>
       </div>
-      <div style="text-align:center;padding:10px 14px;background:#f8fafc;border-radius:8px">
-        <div style="font-size:20px;font-weight:700">${myTasks.length}</div>
-        <div style="font-size:10px;color:#64748b;margin-top:2px">總任務</div>
+      <div style="text-align:center;padding:10px 16px;background:#f8fafc;border-radius:10px;min-width:64px">
+        <div style="font-size:22px;font-weight:700">${myTasks.length}</div>
+        <div style="font-size:9px;color:#64748b;margin-top:2px;letter-spacing:.3px">總任務</div>
       </div>
-      <div style="text-align:center;padding:10px 14px;background:#fff7ed;border-radius:8px">
-        <div style="font-size:20px;font-weight:700;color:#f59e0b">${inprog}</div>
-        <div style="font-size:10px;color:#64748b;margin-top:2px">進行中</div>
+      <div style="text-align:center;padding:10px 16px;background:#fff7ed;border-radius:10px;min-width:64px">
+        <div style="font-size:22px;font-weight:700;color:#f59e0b">${inprog}</div>
+        <div style="font-size:9px;color:#64748b;margin-top:2px;letter-spacing:.3px">進行中</div>
       </div>
-      <div style="text-align:center;padding:10px 14px;background:#f0fdf4;border-radius:8px">
-        <div style="font-size:20px;font-weight:700;color:#10b981">${done}</div>
-        <div style="font-size:10px;color:#64748b;margin-top:2px">已完成</div>
+      ${overdueTasks.length?`<div style="text-align:center;padding:10px 16px;background:#fff5f5;border-radius:10px;min-width:64px">
+        <div style="font-size:22px;font-weight:700;color:#ef4444">${overdueTasks.length}</div>
+        <div style="font-size:9px;color:#64748b;margin-top:2px;letter-spacing:.3px">逾期</div>
+      </div>`:''}
+      <div style="text-align:center;padding:10px 16px;background:#f0fdf4;border-radius:10px;min-width:64px">
+        <div style="font-size:22px;font-weight:700;color:#10b981">${done}</div>
+        <div style="font-size:9px;color:#64748b;margin-top:2px;letter-spacing:.3px">已完成</div>
       </div>
     </div>
   </div>
-  <button class="no-print" onclick="window.print()" style="margin-bottom:16px;padding:8px 20px;background:#1a8f68;color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer">🖨 列印 / 儲存 PDF</button>
-  ${rows||'<p style="color:#94a3b8;text-align:center;padding:32px">此人員目前沒有工作項目</p>'}
+
+  <div class="weekly-box">
+    <div class="weekly-label">本週工作重點說明</div>
+    <div class="weekly-edit" contenteditable="true" data-ph="點擊此處輸入本週主要工作說明、進展或備注事項…">${weekTasks.length?weekTasks.map(t=>`• ${t.task}（${t.project}）`).join('\n'):''}</div>
+  </div>
+
+  ${activeRows?`<div class="section-title">進行中任務</div>${activeRows}`:''}
+  ${doneRows?`<div class="section-title" style="margin-top:${activeRows?'8px':'0'}">已完成任務</div>${doneRows}`:''}
+  ${!activeRows&&!doneRows?'<p style="color:#94a3b8;text-align:center;padding:40px">此人員目前沒有工作項目</p>':''}
+
 </div></body></html>`;
-  const blob=new Blob([html],{type:'text/html;charset=utf-8'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download=`${person}-工作進度-${dateStr.replace(/\//g,'')}.html`;
-  a.click();URL.revokeObjectURL(a.href);
-  toast(`${person} 的報告已下載 ✓`);
+
+  const w=window.open('','_blank');
+  if(w){w.document.write(html);w.document.close();}
+  else{
+    const blob=new Blob([html],{type:'text/html;charset=utf-8'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+    a.download=`${person}-工作進度-${dateStr.replace(/\//g,'')}.html`;
+    a.click();URL.revokeObjectURL(a.href);
+  }
+  toast(`${person} 的報告已開啟 ✓`);
 };
 
 // ── Mobile nav ──
