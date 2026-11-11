@@ -867,8 +867,9 @@ textarea.fc{resize:vertical;min-height:68px;}
             <label class="form-label">執照類型</label>
             <select id="permit-modal-type" class="form-input">
               <option value="建造執照">建造執照</option>
-              <option value="變更設計">變更設計</option>
               <option value="雜項執照">雜項執照</option>
+              <option value="農業設施">農業設施</option>
+              <option value="變更設計">變更設計</option>
             </select>
           </div>
           <div>
@@ -3895,58 +3896,143 @@ window.doBackupExcel=async function(){
 // ── Permit Checklist ──
 const PERMIT_TEMPLATES={
   '建造執照':[
+    {cat:'封面前',items:[
+      {name:'花蓮縣建造執照及雜項執照會審查核表',hint:'二維系統-建築執照申請書表系統 縣市報表',req:true},
+      {name:'AB表 A：自主檢查表',hint:'A1-1 花蓮縣政府委託辦理建造執照及雜項執照(含變更設計)審查申請案 自主檢查表',req:true},
+      {name:'AB表 B：審查意見表',hint:'花蓮縣建築師公會 委託製作審查意見表',req:true}
+    ]},
+    {cat:'封面',items:[
+      {name:'封面（橘色）',hint:'建造執照、雜項執照、農業設施用橘色；變更設計用綠色',req:true}
+    ]},
+    {cat:'書表',items:[
+      {name:'建造執照書表傳輸管理系統上傳單',hint:'二維系統，抽換時同步抽換',req:true},
+      {name:'建造執照及雜項執照規定項目審查表',hint:'二維系統 A13-2',req:true},
+      {name:'現地勘查報告表＋基地勘查照片增頁紙',hint:'花蓮縣建造執照(變更)設計及變更(起、承、監)造人設計人現地勘查報告表，二維系統 縣市報表 A99-25',req:true}
+    ]},
     {cat:'申請書類',items:[
-      {name:'建造執照申請書',req:true},{name:'申請人身分證明文件',req:true},
-      {name:'土地登記謄本',req:true},{name:'建物登記謄本',req:false},
-      {name:'地籍圖謄本',req:true},{name:'土地使用同意書',req:false}
+      {name:'建造執照申請書',hint:'二維系統 A11-1，抽換時同步抽換',req:true},
+      {name:'建築物概要表',hint:'二維系統 A11-4，抽換時同步抽換',req:true},
+      {name:'地號表',hint:'二維系統 A12-2，多筆地號時附上',req:false},
+      {name:'土地使用權同意書',hint:'二維系統 A12-4，建築地址非起造人所有時附上',req:false},
+      {name:'委託書(A)',hint:'二維系統 A11-5',req:true},
+      {name:'建造執照及雜項執照建築師簽證表',hint:'二維系統 A13-10',req:true}
     ]},
-    {cat:'設計圖說',items:[
-      {name:'配置圖',req:true},{name:'各層平面圖',req:true},
-      {name:'立面圖（四向）',req:true},{name:'剖面圖',req:true},
-      {name:'結構平面圖',req:true},{name:'結構剖面圖及大樣',req:true},
-      {name:'水電圖說',req:false},{name:'消防圖說',req:false}
+    {cat:'身分與土地文件',items:[
+      {name:'起造人身分證影本',hint:'若有土地使用權同意書，需另附所有權人身分證',req:true},
+      {name:'戶口名簿',hint:'原保地申請、原住民身份才需要附上',req:false},
+      {name:'地籍圖謄本',hint:'',req:true},
+      {name:'土地登記第一類謄本',hint:'',req:true}
     ]},
-    {cat:'計算書',items:[
-      {name:'結構計算書',req:true},{name:'建築面積計算書',req:true},
-      {name:'容積計算書',req:true},{name:'停車計算書',req:false}
+    {cat:'環境調查',items:[
+      {name:'花蓮縣建築工程營建剩餘土石方申報(列管)表',hint:'需附挖土方圖說',req:true},
+      {name:'花蓮縣申請建築執照地基調查報告',hint:'',req:true},
+      {name:'地質敏感區查詢系統線上查詢結果',hint:'',req:true}
     ]},
-    {cat:'其他文件',items:[
-      {name:'使用分區證明',req:false},{name:'地質鑽探報告',req:false},
-      {name:'日照計算書',req:false},{name:'綠建築評估報告',req:false}
-    ]}
-  ],
-  '變更設計':[
-    {cat:'申請書類',items:[
-      {name:'變更設計申請書',req:true},{name:'原執照影本',req:true},
-      {name:'變更對照表',req:true},{name:'申請人身分證明文件',req:true},
-      {name:'土地登記謄本',req:false}
+    {cat:'施工與綠建築',items:[
+      {name:'施工說明書',hint:'',req:true},
+      {name:'花蓮縣建築執照配合綠建築專章設計檢討列管表',hint:'二維系統 縣市報表 L99-21',req:true},
+      {name:'花蓮縣建築執照配合綠建築專章設計檢討文件查核表',hint:'二維系統 縣市報表 L99-22',req:true},
+      {name:'綠建築基準檢討報告書',hint:'綠建築專章電子化評估系統，若有檢討建築基地綠化及基地保水需附圖',req:true}
     ]},
-    {cat:'設計圖說（變更部分）',items:[
-      {name:'變更部分平面圖（新舊對照）',req:true},{name:'變更部分立面圖',req:false},
-      {name:'變更部分剖面圖',req:false},{name:'結構變更圖說',req:false}
+    {cat:'建築線',items:[
+      {name:'建築線指示函',hint:'都市土地',req:false},
+      {name:'供公眾道路通行函',hint:'非都市土地、無建築線指示時附上',req:false},
+      {name:'排水路搭排許可函 / 排水同意函',hint:'非都市土地、無建築線指示時附上',req:false},
+      {name:'建築線指示(定)申請書圖（檢還附本）',hint:'',req:false}
     ]},
-    {cat:'計算書（如需更新）',items:[
-      {name:'建築面積計算書',req:false},{name:'容積計算書',req:false},
-      {name:'結構計算書（變更部分）',req:false}
+    {cat:'圖說',items:[
+      {name:'地籍套繪圖（上色）',hint:'',req:true},
+      {name:'建照圖說',hint:'',req:true}
+    ]},
+    {cat:'封底前',items:[
+      {name:'地籍套繪圖＋套繪上傳單',hint:'夾在封底前',req:true}
+    ]},
+    {cat:'副本（2份）',items:[
+      {name:'申請書（副本）',hint:'',req:true},
+      {name:'建築物概要表（副本）',hint:'',req:true},
+      {name:'建照圖說（副本）',hint:'',req:true}
     ]}
   ],
   '雜項執照':[
+    {cat:'封面前',items:[
+      {name:'花蓮縣建造執照及雜項執照會審查核表',hint:'二維系統-建築執照申請書表系統 縣市報表',req:true},
+      {name:'AB表 A：自主檢查表',hint:'A1-1 花蓮縣政府委託辦理建造執照及雜項執照(含變更設計)審查申請案 自主檢查表',req:true},
+      {name:'AB表 B：審查意見表',hint:'花蓮縣建築師公會 委託製作審查意見表',req:true}
+    ]},
+    {cat:'封面',items:[
+      {name:'封面（橘色）',hint:'',req:true}
+    ]},
+    {cat:'書表與申請書類',items:[
+      {name:'雜項執照書表傳輸管理系統上傳單',hint:'二維系統，抽換時同步抽換',req:true},
+      {name:'建造執照及雜項執照規定項目審查表',hint:'二維系統 A13-2',req:true},
+      {name:'雜項執照申請書',hint:'二維系統，抽換時同步抽換',req:true},
+      {name:'建築物概要表',hint:'抽換時同步抽換',req:true},
+      {name:'委託書(A)',hint:'',req:true},
+      {name:'建造執照及雜項執照建築師簽證表',hint:'二維系統 A13-10',req:true}
+    ]},
+    {cat:'身分與土地文件',items:[
+      {name:'起造人身分證影本',hint:'',req:true},
+      {name:'地籍圖謄本',hint:'',req:true},
+      {name:'土地登記第一類謄本',hint:'',req:true}
+    ]},
+    {cat:'圖說',items:[
+      {name:'地籍套繪圖（上色）',hint:'',req:true},
+      {name:'設計圖說',hint:'',req:true}
+    ]}
+  ],
+  '農業設施':[
+    {cat:'封面',items:[
+      {name:'封面（橘色）',hint:'',req:true}
+    ]},
     {cat:'申請書類',items:[
-      {name:'雜項執照申請書',req:true},{name:'申請人身分證明文件',req:true},
-      {name:'土地登記謄本',req:true},{name:'位置圖',req:true}
+      {name:'農業設施申請書',hint:'',req:true},
+      {name:'土地登記第一類謄本',hint:'',req:true},
+      {name:'地籍圖謄本',hint:'',req:true},
+      {name:'農業用地作農業使用證明書',hint:'',req:false},
+      {name:'起造人身分證影本',hint:'',req:true}
     ]},
-    {cat:'設計圖說',items:[
-      {name:'設置位置圖',req:true},{name:'構造詳圖',req:true},
-      {name:'正面圖、側面圖',req:true}
+    {cat:'圖說',items:[
+      {name:'配置圖',hint:'',req:true},
+      {name:'設計圖說',hint:'',req:true}
+    ]}
+  ],
+  '變更設計':[
+    {cat:'封面前',items:[
+      {name:'花蓮縣建造執照及雜項執照會審查核表',hint:'二維系統-建築執照申請書表系統 縣市報表',req:true},
+      {name:'AB表 A：自主檢查表',hint:'A1-1 花蓮縣政府委託辦理建造執照及雜項執照(含變更設計)審查申請案 自主檢查表',req:true},
+      {name:'AB表 B：審查意見表',hint:'花蓮縣建築師公會 委託製作審查意見表',req:true}
     ]},
-    {cat:'計算書',items:[
-      {name:'結構計算書',req:false},{name:'基礎計算書',req:false}
+    {cat:'封面',items:[
+      {name:'封面（綠色）',hint:'變更設計用綠色',req:true}
+    ]},
+    {cat:'書表與申請書類',items:[
+      {name:'變更設計書表傳輸管理系統上傳單',hint:'二維系統，抽換時同步抽換',req:true},
+      {name:'變更設計申請書',hint:'二維系統，抽換時同步抽換',req:true},
+      {name:'原執照影本',hint:'',req:true},
+      {name:'變更對照表',hint:'',req:true},
+      {name:'建築物概要表',hint:'抽換時同步抽換',req:true},
+      {name:'委託書(A)',hint:'',req:true},
+      {name:'建築師簽證表',hint:'',req:true}
+    ]},
+    {cat:'身分與土地文件',items:[
+      {name:'起造人身分證影本',hint:'',req:true},
+      {name:'地籍圖謄本',hint:'',req:false},
+      {name:'土地登記第一類謄本',hint:'',req:false}
+    ]},
+    {cat:'設計圖說（變更部分）',items:[
+      {name:'變更部分平面圖（新舊對照）',hint:'',req:true},
+      {name:'變更部分立面圖',hint:'',req:false},
+      {name:'變更部分剖面圖',hint:'',req:false},
+      {name:'結構變更圖說',hint:'',req:false}
+    ]},
+    {cat:'封底前',items:[
+      {name:'地籍套繪圖＋套繪上傳單',hint:'夾在封底前',req:false}
     ]}
   ]
 };
 
 function permitTypeBadge(type){
-  const cls={建造執照:'permit-type-build',變更設計:'permit-type-change',雜項執照:'permit-type-misc'}[type]||'permit-type-build';
+  const cls={建造執照:'permit-type-build',雜項執照:'permit-type-build',農業設施:'permit-type-build',變更設計:'permit-type-change'}[type]||'permit-type-build';
   return`<span class="permit-type-badge ${cls}">${type}</span>`;
 }
 
@@ -4013,7 +4099,10 @@ function renderPermit(){
       ${citems.map(it=>`
         <div class="permit-item">
           <span class="permit-item-order">${it._idx+1}</span>
-          <span class="permit-item-name${it.req?' req':''}">${it.name}</span>
+          <span class="permit-item-name${it.req?' req':''}">
+            ${it.name}
+            ${it.hint?`<span style="display:block;font-size:10px;color:var(--text-hint);font-weight:400;margin-top:1px">${it.hint}</span>`:''}
+          </span>
           <input class="permit-item-note" value="${(it.note||'').replace(/"/g,'&quot;')}" placeholder="備註"
             onchange="updatePermitItemNote('${cl.id}',${it._idx},this.value)">
           <button class="pst-btn ${statusClass[it.status||'pending']}"
@@ -4077,7 +4166,7 @@ window.createPermitChecklist=async function(){
   const project=$id('permit-modal-proj').value;
   const note=$id('permit-modal-note').value.trim();
   const tmpl=PERMIT_TEMPLATES[type]||[];
-  const items=tmpl.flatMap(g=>g.items.map(it=>({cat:g.cat,name:it.name,req:it.req||false,status:'pending',note:''})));
+  const items=tmpl.flatMap(g=>g.items.map(it=>({cat:g.cat,name:it.name,hint:it.hint||'',req:it.req||false,status:'pending',note:''})));
   try{
     const ref=await addDoc(checklistsCol,{type,project,note,items,createdAt:Date.now()});
     curPermitId=ref.id;
