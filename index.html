@@ -291,6 +291,47 @@ select:focus,input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 
 .pd-tname-edit:focus{background:var(--surface-2);border-radius:4px;padding:2px 6px;outline:2px solid var(--accent);outline-offset:1px;}
 .pd-tname-edit.struck{color:var(--text-hint);text-decoration:line-through;}
 /* ── Guide page ── */
+/* ── Permit Checklist ── */
+.permit-layout{display:grid;grid-template-columns:260px 1fr;height:100%;overflow:hidden;}
+.permit-list-panel{border-right:1px solid var(--border);overflow-y:auto;background:var(--surface-2);display:flex;flex-direction:column;}
+.permit-list-head{padding:14px 14px 10px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.permit-card{padding:12px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s;position:relative;}
+.permit-card:hover{background:var(--surface);}
+.permit-card.active{background:var(--surface);border-left:3px solid var(--accent);}
+.permit-card-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px;}
+.permit-card-sub{font-size:11px;color:var(--text-hint);}
+.permit-card-prog{display:flex;align-items:center;gap:6px;margin-top:6px;}
+.permit-prog-bar{flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden;}
+.permit-prog-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .3s;}
+.permit-prog-num{font-size:10px;font-weight:600;color:var(--text-muted);min-width:28px;text-align:right;}
+.permit-detail-panel{overflow-y:auto;display:flex;flex-direction:column;}
+.permit-detail-head{padding:16px 20px 14px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--surface);display:flex;align-items:flex-start;gap:12px;}
+.permit-type-badge{font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap;}
+.permit-type-build{background:#e6f5f0;color:#0d6b4a;}
+.permit-type-change{background:#fef3c7;color:#92400e;}
+.permit-type-misc{background:#ede9fe;color:#5b21b6;}
+.permit-category{padding:12px 20px 0;}
+.permit-cat-label{font-size:10px;font-weight:700;color:var(--text-hint);letter-spacing:.8px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.permit-cat-label::after{content:'';flex:1;height:1px;background:var(--border);}
+.permit-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;transition:background .1s;margin-bottom:2px;}
+.permit-item:hover{background:var(--surface-2);}
+.permit-item-order{font-size:10px;color:var(--text-hint);font-weight:600;min-width:18px;text-align:center;}
+.permit-item-name{flex:1;font-size:13px;color:var(--text);line-height:1.4;}
+.permit-item-name.req::after{content:'*';color:#ef4444;font-size:10px;margin-left:2px;}
+.permit-item-note{font-size:11px;color:var(--text-hint);border:none;background:transparent;outline:none;font-family:inherit;width:120px;text-align:right;}
+.permit-item-note::placeholder{color:var(--text-hint);}
+.pst-btn{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;border:1.5px solid;cursor:pointer;white-space:nowrap;transition:all .15s;min-width:60px;text-align:center;}
+.pst-have{background:#e6f5f0;color:#0d6b4a;border-color:#0d6b4a40;}
+.pst-have:hover{background:#d1ede5;}
+.pst-none{background:#fef2f2;color:#b91c1c;border-color:#b91c1c40;}
+.pst-none:hover{background:#fee2e2;}
+.pst-pending{background:#fefce8;color:#92400e;border-color:#d9770040;}
+.pst-pending:hover{background:#fef08a44;}
+.permit-add-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;cursor:pointer;color:var(--text-hint);font-size:12px;transition:background .1s;}
+.permit-add-item:hover{background:var(--surface-2);color:var(--accent);}
+.permit-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:12px;color:var(--text-hint);padding:3rem;}
+@media(max-width:680px){.permit-layout{grid-template-columns:1fr;}.permit-list-panel{max-height:220px;}.permit-detail-panel{flex:1;}}
+/* ──────────── */
 .guide-section{margin-bottom:2rem;}
 .guide-section-head{display:flex;align-items:center;gap:12px;margin-bottom:1rem;padding-bottom:.625rem;border-bottom:2px solid var(--border);}
 .guide-icon{font-size:18px;width:40px;height:40px;background:var(--surface-2);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
@@ -611,6 +652,7 @@ textarea.fc{resize:vertical;min-height:68px;}
     <button class="sb-btn" onclick="switchNav('mytasks',this)"><span class="sb-icon">☑</span>工作進度</button>
     <button class="sb-btn" onclick="switchNav('calendar',this)"><span class="sb-icon">📅</span>行事曆</button>
     <button class="sb-btn" onclick="switchNav('members',this)"><span class="sb-icon">👥</span>人員管理</button>
+    <button class="sb-btn" onclick="switchNav('permit',this)"><span class="sb-icon">📋</span>卷宗確認</button>
     <button class="sb-btn" onclick="switchNav('guide',this)"><span class="sb-icon">📖</span>使用說明</button>
     <div class="sb-divider"></div>
     <div class="sb-label">資料夾</div>
@@ -782,6 +824,93 @@ textarea.fc{resize:vertical;min-height:68px;}
     </div>
 
     <!-- ── 使用說明 ── -->
+    <!-- ── 卷宗確認 ── -->
+    <div id="view-permit" style="display:none;flex-direction:column;height:100%">
+      <div class="c-header">
+        <div class="c-title">卷宗確認清單</div>
+        <div class="c-actions">
+          <button class="btn" id="permit-new-btn" onclick="openNewPermitModal()" style="font-size:12px;padding:5px 14px">＋ 新增清單</button>
+        </div>
+      </div>
+      <div class="permit-layout" style="flex:1;min-height:0">
+        <div class="permit-list-panel" id="permit-list-panel">
+          <div class="permit-list-head">
+            <select id="permit-proj-filter" onchange="renderPermit()" style="width:100%;font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-family:inherit">
+              <option value="">全部專案</option>
+            </select>
+          </div>
+          <div id="permit-list-body" style="flex:1;overflow-y:auto"></div>
+        </div>
+        <div class="permit-detail-panel" id="permit-detail-panel">
+          <div class="permit-empty" id="permit-empty-hint">
+            <div style="font-size:40px">📋</div>
+            <div style="font-size:14px;font-weight:600">尚未選擇清單</div>
+            <div style="font-size:12px">從左側選擇清單或建立新的卷宗確認清單</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 新增卷宗清單 Modal ── -->
+    <div class="overlay" id="permit-modal-overlay" onclick="if(event.target===this)closePermitModal()">
+      <div class="modal" style="max-width:420px">
+        <div class="modal-header">
+          <div class="modal-title">新增卷宗確認清單</div>
+          <button class="modal-close" onclick="closePermitModal()">✕</button>
+        </div>
+        <div style="padding:1.25rem;display:flex;flex-direction:column;gap:14px">
+          <div>
+            <label class="form-label">綁定專案</label>
+            <select id="permit-modal-proj" class="form-input"></select>
+          </div>
+          <div>
+            <label class="form-label">執照類型</label>
+            <select id="permit-modal-type" class="form-input">
+              <option value="建造執照">建造執照</option>
+              <option value="變更設計">變更設計</option>
+              <option value="雜項執照">雜項執照</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">清單備註（選填，如：A棟、第一次送審）</label>
+            <input id="permit-modal-note" class="form-input" placeholder="可空白" maxlength="40">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" onclick="closePermitModal()">取消</button>
+          <button class="btn btn-primary" onclick="createPermitChecklist()">建立清單</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 新增自訂文件 Modal ── -->
+    <div class="overlay" id="permit-additem-overlay" onclick="if(event.target===this)closeAddPermitItem()">
+      <div class="modal" style="max-width:380px">
+        <div class="modal-header">
+          <div class="modal-title">新增自訂文件</div>
+          <button class="modal-close" onclick="closeAddPermitItem()">✕</button>
+        </div>
+        <div style="padding:1.25rem;display:flex;flex-direction:column;gap:14px">
+          <div>
+            <label class="form-label">文件名稱</label>
+            <input id="pai-name" class="form-input" placeholder="輸入文件名稱" maxlength="60">
+          </div>
+          <div>
+            <label class="form-label">類別（分組）</label>
+            <input id="pai-cat" class="form-input" placeholder="例：申請書類、設計圖說" maxlength="30">
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="checkbox" id="pai-req" style="width:14px;height:14px">
+            <label for="pai-req" style="font-size:13px;cursor:pointer">必要文件</label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" onclick="closeAddPermitItem()">取消</button>
+          <button class="btn btn-primary" onclick="submitAddPermitItem()">新增</button>
+        </div>
+      </div>
+    </div>
+
     <div id="view-guide" style="display:none">
       <div class="c-header">
         <div class="c-title">使用說明</div>
@@ -1247,7 +1376,8 @@ textarea.fc{resize:vertical;min-height:68px;}
 <script>
 const FB={apiKey:"AIzaSyDHiG0qDLqjFgyf40Qmr1CZah3uHMkgIVI",authDomain:"progress-tracking-9f010.firebaseapp.com",projectId:"progress-tracking-system-9f010",storageBucket:"progress-tracking-system-9f010.firebasestorage.app",messagingSenderId:"303666820708",appId:"1:303666820708:web:7b626e91e7e8b251899171"};
 let db,col,folderCol,memberCol,calCol,projectsCol,addDoc,updateDoc,deleteDoc,docFn,sts;
-let tasks=[],folders=[],members=[],calEvents=[],projectMeta={},editId=null,editMemberId=null,editCalId=null;
+let tasks=[],folders=[],members=[],calEvents=[],checklists=[],projectMeta={},editId=null,editMemberId=null,editCalId=null;
+let curPermitId=null,permitAddItemChecklistId=null;
 let nav='project',ctab='kanban',curMember=null,apScopes={},collapsed={},folderViews={};
 let calView='month',calYear=new Date().getFullYear(),calMonth=new Date().getMonth(),calWeekStart=null;
 const AVCS=['av-a','av-b','av-c','av-d','av-e','av-f','av-g','av-h'];
@@ -1279,6 +1409,7 @@ function $id(i){return document.getElementById(i);}
   memberCol=fs.collection(db,'members');
   calCol=fs.collection(db,'calEvents');
   projectsCol=fs.collection(db,'projects');
+  checklistsCol=fs.collection(db,'checklists');
   addDoc=fs.addDoc;updateDoc=fs.updateDoc;deleteDoc=fs.deleteDoc;docFn=fs.doc;sts=fs.serverTimestamp;
   fs.onSnapshot(projectsCol,snap=>{
     projectMeta={};
@@ -1309,6 +1440,11 @@ function $id(i){return document.getElementById(i);}
   fs.onSnapshot(calCol,snap=>{
     calEvents=snap.docs.map(d=>({id:d.id,...d.data()}));
     if(nav==='calendar') renderCalendar();
+  },e=>console.error(e));
+  fs.onSnapshot(checklistsCol,snap=>{
+    checklists=snap.docs.map(d=>({id:d.id,...d.data()}));
+    checklists.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+    if(nav==='permit') renderPermit();
   },e=>console.error(e));
 })();
 
@@ -1411,6 +1547,7 @@ function renderAll(){
   else if(nav==='members')renderMembersPage();
   else if(nav==='calendar')renderCalendar();
   else if(nav==='folder')renderFolderDetail();
+  else if(nav==='permit')renderPermit();
   // guide page is static — no render needed
 }
 
@@ -1419,7 +1556,10 @@ window.switchNav=function(n,el){
   nav=n;curMember=null;
   document.querySelectorAll('.sb-btn').forEach(e=>e.classList.remove('active'));
   if(el)el.classList.add('active');
-  ['project','mytasks','member','pdetail','members','calendar','folder','guide'].forEach(v=>$id('view-'+v).style.display=v===n?'':'none');
+  ['project','mytasks','member','pdetail','members','calendar','folder','guide','permit'].forEach(v=>{
+    const el=$id('view-'+v);if(!el)return;
+    el.style.display=v===n?(v==='permit'?'flex':''):'none';
+  });
   renderAll();
 };
 window.scrollToMtBlock=function(id){
@@ -3750,6 +3890,234 @@ window.doBackupExcel=async function(){
 
   XLSX.writeFile(wb,`h-tracker-backup-${dateStr}.xlsx`);
   toast('Excel 備份已下載 ✓');
+};
+
+// ── Permit Checklist ──
+const PERMIT_TEMPLATES={
+  '建造執照':[
+    {cat:'申請書類',items:[
+      {name:'建造執照申請書',req:true},{name:'申請人身分證明文件',req:true},
+      {name:'土地登記謄本',req:true},{name:'建物登記謄本',req:false},
+      {name:'地籍圖謄本',req:true},{name:'土地使用同意書',req:false}
+    ]},
+    {cat:'設計圖說',items:[
+      {name:'配置圖',req:true},{name:'各層平面圖',req:true},
+      {name:'立面圖（四向）',req:true},{name:'剖面圖',req:true},
+      {name:'結構平面圖',req:true},{name:'結構剖面圖及大樣',req:true},
+      {name:'水電圖說',req:false},{name:'消防圖說',req:false}
+    ]},
+    {cat:'計算書',items:[
+      {name:'結構計算書',req:true},{name:'建築面積計算書',req:true},
+      {name:'容積計算書',req:true},{name:'停車計算書',req:false}
+    ]},
+    {cat:'其他文件',items:[
+      {name:'使用分區證明',req:false},{name:'地質鑽探報告',req:false},
+      {name:'日照計算書',req:false},{name:'綠建築評估報告',req:false}
+    ]}
+  ],
+  '變更設計':[
+    {cat:'申請書類',items:[
+      {name:'變更設計申請書',req:true},{name:'原執照影本',req:true},
+      {name:'變更對照表',req:true},{name:'申請人身分證明文件',req:true},
+      {name:'土地登記謄本',req:false}
+    ]},
+    {cat:'設計圖說（變更部分）',items:[
+      {name:'變更部分平面圖（新舊對照）',req:true},{name:'變更部分立面圖',req:false},
+      {name:'變更部分剖面圖',req:false},{name:'結構變更圖說',req:false}
+    ]},
+    {cat:'計算書（如需更新）',items:[
+      {name:'建築面積計算書',req:false},{name:'容積計算書',req:false},
+      {name:'結構計算書（變更部分）',req:false}
+    ]}
+  ],
+  '雜項執照':[
+    {cat:'申請書類',items:[
+      {name:'雜項執照申請書',req:true},{name:'申請人身分證明文件',req:true},
+      {name:'土地登記謄本',req:true},{name:'位置圖',req:true}
+    ]},
+    {cat:'設計圖說',items:[
+      {name:'設置位置圖',req:true},{name:'構造詳圖',req:true},
+      {name:'正面圖、側面圖',req:true}
+    ]},
+    {cat:'計算書',items:[
+      {name:'結構計算書',req:false},{name:'基礎計算書',req:false}
+    ]}
+  ]
+};
+
+function permitTypeBadge(type){
+  const cls={建造執照:'permit-type-build',變更設計:'permit-type-change',雜項執照:'permit-type-misc'}[type]||'permit-type-build';
+  return`<span class="permit-type-badge ${cls}">${type}</span>`;
+}
+
+function permitProgress(cl){
+  const items=cl.items||[];
+  if(!items.length) return{pct:0,have:0,total:0};
+  const have=items.filter(it=>it.status==='have').length;
+  return{pct:Math.round(have/items.length*100),have,total:items.length};
+}
+
+function renderPermit(){
+  const proj=$id('permit-proj-filter');
+  if(proj){
+    const all=[...new Set(checklists.map(c=>c.project).filter(Boolean)),...projects()];
+    const uniq=[...new Set(all)].sort();
+    const cur=proj.value;
+    proj.innerHTML='<option value="">全部專案</option>'+uniq.map(p=>`<option value="${p}"${p===cur?' selected':''}>${p}</option>`).join('');
+  }
+  const filter=($id('permit-proj-filter')||{}).value||'';
+  const list=filter?checklists.filter(c=>c.project===filter):checklists;
+
+  const body=$id('permit-list-body');
+  if(!body) return;
+  if(!list.length){
+    body.innerHTML=`<div style="padding:20px;text-align:center;color:var(--text-hint);font-size:12px">尚無卷宗清單<br>點擊「＋ 新增清單」開始</div>`;
+  } else {
+    body.innerHTML=list.map(cl=>{
+      const{pct,have,total}=permitProgress(cl);
+      const active=cl.id===curPermitId?' active':'';
+      return`<div class="permit-card${active}" onclick="selectPermit('${cl.id}')">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
+          ${permitTypeBadge(cl.type)}
+          <span class="permit-card-title" style="flex:1">${cl.project||'（無專案）'}</span>
+        </div>
+        ${cl.note?`<div class="permit-card-sub">${cl.note}</div>`:''}
+        <div class="permit-card-prog">
+          <div class="permit-prog-bar"><div class="permit-prog-fill" style="width:${pct}%"></div></div>
+          <span class="permit-prog-num">${have}/${total}</span>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  const detail=$id('permit-detail-panel');
+  if(!detail) return;
+  const cl=checklists.find(c=>c.id===curPermitId);
+  if(!cl){
+    detail.innerHTML=`<div class="permit-empty" id="permit-empty-hint">
+      <div style="font-size:40px">📋</div>
+      <div style="font-size:14px;font-weight:600">尚未選擇清單</div>
+      <div style="font-size:12px">從左側選擇清單或建立新的卷宗確認清單</div>
+    </div>`;
+    return;
+  }
+  const{pct,have,total}=permitProgress(cl);
+  const items=cl.items||[];
+  const catMap={};
+  items.forEach((it,idx)=>{const cat=it.cat||'其他';if(!catMap[cat])catMap[cat]=[];catMap[cat].push({...it,_idx:idx});});
+  const statusLabel={have:'✓ 有',none:'✗ 無',pending:'? 待確認'};
+  const statusClass={have:'pst-have',none:'pst-none',pending:'pst-pending'};
+  const catsHtml=Object.entries(catMap).map(([cat,citems])=>`
+    <div class="permit-category">
+      <div class="permit-cat-label">${cat}</div>
+      ${citems.map(it=>`
+        <div class="permit-item">
+          <span class="permit-item-order">${it._idx+1}</span>
+          <span class="permit-item-name${it.req?' req':''}">${it.name}</span>
+          <input class="permit-item-note" value="${(it.note||'').replace(/"/g,'&quot;')}" placeholder="備註"
+            onchange="updatePermitItemNote('${cl.id}',${it._idx},this.value)">
+          <button class="pst-btn ${statusClass[it.status||'pending']}"
+            onclick="cyclePermitItemStatus('${cl.id}',${it._idx})">
+            ${statusLabel[it.status||'pending']}
+          </button>
+        </div>`).join('')}
+      <div class="permit-add-item" onclick="openAddPermitItem('${cl.id}','${cat}')">＋ 新增文件至此類別</div>
+    </div>`).join('');
+
+  detail.innerHTML=`
+    <div class="permit-detail-head">
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          ${permitTypeBadge(cl.type)}
+          <span style="font-size:15px;font-weight:700;color:var(--text)">${cl.project||'（無專案）'}</span>
+          ${cl.note?`<span style="font-size:12px;color:var(--text-hint)">${cl.note}</span>`:''}
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="permit-prog-bar" style="max-width:160px"><div class="permit-prog-fill" style="width:${pct}%"></div></div>
+          <span style="font-size:12px;color:var(--text-muted);font-weight:600">${pct}% 完整（${have}/${total} 件齊全）</span>
+        </div>
+      </div>
+      <button class="btn" style="font-size:11px;padding:4px 10px;color:#ef4444;border-color:#ef444440"
+        onclick="deletePermitChecklist('${cl.id}')">刪除清單</button>
+    </div>
+    ${catsHtml}
+    <div class="permit-category" style="padding-bottom:20px">
+      <div class="permit-add-item" onclick="openAddPermitItem('${cl.id}','')">＋ 新增自訂文件（新類別）</div>
+    </div>`;
+}
+
+window.selectPermit=function(id){curPermitId=id;renderPermit();};
+
+window.cyclePermitItemStatus=async function(clId,idx){
+  const cl=checklists.find(c=>c.id===clId);if(!cl)return;
+  const items=[...(cl.items||[])];
+  const cur=items[idx].status||'pending';
+  items[idx]={...items[idx],status:{have:'none',none:'pending',pending:'have'}[cur]};
+  try{await updateDoc(docFn(db,'checklists',clId),{items});}catch(e){toast('更新失敗');}
+};
+
+window.updatePermitItemNote=async function(clId,idx,note){
+  const cl=checklists.find(c=>c.id===clId);if(!cl)return;
+  const items=[...(cl.items||[])];
+  items[idx]={...items[idx],note};
+  try{await updateDoc(docFn(db,'checklists',clId),{items});}catch(e){toast('備註更新失敗');}
+};
+
+window.openNewPermitModal=function(){
+  const sel=$id('permit-modal-proj');
+  sel.innerHTML='<option value="">（無專案）</option>'+projects().map(p=>`<option value="${p}">${p}</option>`).join('');
+  $id('permit-modal-note').value='';
+  $id('permit-modal-type').value='建造執照';
+  $id('permit-modal-overlay').classList.add('open');
+};
+window.closePermitModal=function(){$id('permit-modal-overlay').classList.remove('open');};
+
+window.createPermitChecklist=async function(){
+  const type=$id('permit-modal-type').value;
+  const project=$id('permit-modal-proj').value;
+  const note=$id('permit-modal-note').value.trim();
+  const tmpl=PERMIT_TEMPLATES[type]||[];
+  const items=tmpl.flatMap(g=>g.items.map(it=>({cat:g.cat,name:it.name,req:it.req||false,status:'pending',note:''})));
+  try{
+    const ref=await addDoc(checklistsCol,{type,project,note,items,createdAt:Date.now()});
+    curPermitId=ref.id;
+    closePermitModal();
+    toast('清單已建立 ✓');
+  }catch(e){toast('建立失敗');console.error(e);}
+};
+
+window.deletePermitChecklist=async function(id){
+  if(!confirm('確定要刪除此卷宗清單？')) return;
+  try{
+    await deleteDoc(docFn(db,'checklists',id));
+    if(curPermitId===id) curPermitId=null;
+    toast('清單已刪除');
+  }catch(e){toast('刪除失敗');}
+};
+
+window.openAddPermitItem=function(clId,defaultCat){
+  permitAddItemChecklistId=clId;
+  $id('pai-name').value='';
+  $id('pai-cat').value=defaultCat||'';
+  $id('pai-req').checked=false;
+  $id('permit-additem-overlay').classList.add('open');
+  setTimeout(()=>$id('pai-name').focus(),50);
+};
+window.closeAddPermitItem=function(){$id('permit-additem-overlay').classList.remove('open');};
+
+window.submitAddPermitItem=async function(){
+  const name=$id('pai-name').value.trim();
+  if(!name){alert('請輸入文件名稱');return;}
+  const cat=$id('pai-cat').value.trim()||'其他';
+  const req=$id('pai-req').checked;
+  const cl=checklists.find(c=>c.id===permitAddItemChecklistId);
+  if(!cl) return;
+  const items=[...(cl.items||[]),{cat,name,req,status:'pending',note:''}];
+  try{
+    await updateDoc(docFn(db,'checklists',permitAddItemChecklistId),{items});
+    closeAddPermitItem();
+    toast('文件已新增 ✓');
+  }catch(e){toast('新增失敗');}
 };
 
 // ── Export person work report ──
