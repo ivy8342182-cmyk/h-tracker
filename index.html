@@ -344,9 +344,9 @@ select:focus,input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 
 .mt-overdue-banner { background: #fff5f5; border: 1px solid #fecaca; border-radius: var(--radius-sm); padding: .75rem 1.125rem; display: flex; align-items: center; gap: 10px; font-size: 13px; color: #b84040; font-weight: 500; }
 .mt-overdue-banner .ov-count { font-size: 18px; font-weight: 700; }
 .mt-blocks { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-.mt-block { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm); }
+.mt-block { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: visible; box-shadow: var(--shadow-sm); }
 .mt-block-full { grid-column: 1 / -1; }
-.mt-block-header { display: flex; align-items: center; justify-content: space-between; padding: .875rem 1.125rem; border-bottom: 1px solid var(--border); background: var(--surface-2); }
+.mt-block-header { display: flex; align-items: center; justify-content: space-between; padding: .875rem 1.125rem; border-bottom: 1px solid var(--border); background: var(--surface-2); border-radius: calc(var(--radius) - 1px) calc(var(--radius) - 1px) 0 0; }
 .mt-block-title { display: flex; align-items: center; gap: 8px; }
 .mt-block-icon { font-size: 14px; }
 .mt-block-name { font-size: 13px; font-weight: 600; color: var(--text); letter-spacing: -.01em; }
@@ -385,7 +385,7 @@ select:focus,input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 
 .ipct-wrap{position:relative;display:inline-block;}
 .ipct-btn{display:flex;align-items:center;gap:6px;cursor:pointer;padding:3px 5px;border-radius:5px;transition:background .1s;}
 .ipct-btn:hover{background:var(--surface-2);}
-.ipct-popup{display:none;position:absolute;top:calc(100% + 5px);left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--radius-sm);padding:12px 14px;z-index:150;box-shadow:var(--shadow-lg);width:190px;}
+.ipct-popup{display:none;position:absolute;top:calc(100% + 5px);left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--radius-sm);padding:12px 14px;z-index:300;box-shadow:var(--shadow-lg);width:190px;}
 .ipct-popup.open{display:block;}
 .ipct-popup input[type=range]{width:100%;accent-color:var(--accent);margin-bottom:6px;}
 .ipct-val{font-size:12px;font-weight:600;text-align:center;color:var(--text);}
@@ -1819,7 +1819,7 @@ window.renderMyTasks=function(){
   function ring(pct,id,color='var(--accent)'){
     const r=13,c=17,circ=2*Math.PI*r;
     const dash=circ*(pct/100),gap=circ-dash;
-    return`<svg class="mt-pct-ring" data-id="${id}" viewBox="0 0 34 34" style="cursor:pointer">
+    return`<svg class="mt-pct-ring" data-id="${id}" viewBox="0 0 34 34" style="cursor:pointer" onclick="event.stopPropagation();toggleIpct('${id}')">
       <circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="var(--bg)" stroke-width="3"/>
       <circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="${color}" stroke-width="3"
         stroke-dasharray="${dash.toFixed(1)} ${gap.toFixed(1)}"
@@ -1973,6 +1973,15 @@ window.renderMyTasks=function(){
 window.toggleMtOverdue=function(){
   const el=$id('mt-overdue-block');
   if(el) el.style.display=el.style.display==='none'?'':'none';
+};
+
+// ── Global pct popup toggle (used by ring SVG onclick) ──
+window.toggleIpct=function(id){
+  const popup=$id('ipct_'+id);
+  if(!popup) return;
+  const wasOpen=popup.classList.contains('open');
+  document.querySelectorAll('.ipct-popup.open').forEach(p=>p.classList.remove('open'));
+  if(!wasOpen) popup.classList.add('open');
 };
 
 // ── My Tasks inline event delegation (bound once, survives re-renders) ──
