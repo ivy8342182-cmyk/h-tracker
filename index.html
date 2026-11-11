@@ -1960,14 +1960,14 @@ window.renderMyTasks=function(){
   function ring(pct,id,color='var(--accent)'){
     const r=13,c=17,circ=2*Math.PI*r;
     const dash=circ*(pct/100),gap=circ-dash;
-    return`<svg class="mt-pct-ring" data-id="${id}" viewBox="0 0 34 34" style="cursor:pointer" onclick="event.stopPropagation();toggleIpct('${id}')">
-      <circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="var(--bg)" stroke-width="3"/>
+    return`<svg class="mt-pct-ring" data-id="${id}" viewBox="0 0 34 34" style="cursor:pointer;pointer-events:all" onclick="event.stopPropagation();toggleIpct('${id}')">
+      <circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="var(--bg)" stroke-width="3" style="pointer-events:none"/>
       <circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="${color}" stroke-width="3"
         stroke-dasharray="${dash.toFixed(1)} ${gap.toFixed(1)}"
         stroke-dashoffset="${(circ/4).toFixed(1)}"
-        stroke-linecap="round"/>
+        stroke-linecap="round" style="pointer-events:none"/>
       <text x="${c}" y="${c}" text-anchor="middle" dominant-baseline="central"
-        font-size="7" font-weight="700" fill="var(--text-muted)" font-family="inherit">${pct}%</text>
+        font-size="7" font-weight="700" fill="var(--text-muted)" font-family="inherit" style="pointer-events:none">${pct}%</text>
     </svg>`;
   }
 
@@ -2131,9 +2131,11 @@ function initMtDelegation(){
   if(wrap._delegated) return;
   wrap._delegated=true;
 
-  // Close all popups on outside click
-  document.addEventListener('click',()=>{
-    wrap.querySelectorAll('.ipct-popup.open,.iproj-dd.open').forEach(p=>p.classList.remove('open'));
+  // Close all popups on outside click (use mousedown to avoid same-tick close)
+  document.addEventListener('mousedown',function(e){
+    if(!e.target.closest('.ipct-wrap,.iproj-wrap')){
+      wrap.querySelectorAll('.ipct-popup.open,.iproj-dd.open').forEach(p=>p.classList.remove('open'));
+    }
   });
 
   // Delegate all interactions to mt-wrap
