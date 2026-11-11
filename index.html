@@ -927,7 +927,7 @@ textarea.fc{resize:vertical;min-height:68px;}
         </div>
 
         <!-- Quick index -->
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:2rem">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:2rem">
           <a class="guide-idx-card" onclick="document.getElementById('g-project').scrollIntoView({behavior:'smooth'})">
             <span style="font-size:20px">⊞</span>
             <span class="guide-idx-title">專案總覽</span>
@@ -952,6 +952,11 @@ textarea.fc{resize:vertical;min-height:68px;}
             <span style="font-size:20px">📁</span>
             <span class="guide-idx-title">資料夾</span>
             <span class="guide-idx-desc">案件分類管理</span>
+          </a>
+          <a class="guide-idx-card" onclick="document.getElementById('g-permit').scrollIntoView({behavior:'smooth'})">
+            <span style="font-size:20px">📋</span>
+            <span class="guide-idx-title">卷宗確認</span>
+            <span class="guide-idx-desc">建築執照卷宗清單</span>
           </a>
           <a class="guide-idx-card" onclick="document.getElementById('g-add').scrollIntoView({behavior:'smooth'})">
             <span style="font-size:20px">➕</span>
@@ -1040,7 +1045,7 @@ textarea.fc{resize:vertical;min-height:68px;}
               <div class="guide-step">5</div>
               <div>
                 <div class="guide-card-title">匯出個人報告</div>
-                <div class="guide-card-body">右上角「⬇ 匯出報告」可下載 PDF 格式的個人工作進度報告，列出所有任務、完成度與截止日。</div>
+                <div class="guide-card-body">右上角「⬇ 匯出報告」會開啟一個可編輯的報告網頁，列出本週與進行中的工作項目。<br>可在頁面上直接填寫「本週主要工作說明」，再用瀏覽器列印或另存為 PDF。</div>
               </div>
             </div>
           </div>
@@ -1116,7 +1121,61 @@ textarea.fc{resize:vertical;min-height:68px;}
           </div>
         </div>
 
-        <!-- 6. 新增進度 -->
+        <!-- 6. 卷宗確認 -->
+        <div id="g-permit" class="guide-section">
+          <div class="guide-section-head"><span class="guide-icon">📋</span><div><div class="guide-title">卷宗確認清單</div><div class="guide-sub">整理建築執照送審卷宗，確認文件是否齊全</div></div></div>
+          <div class="guide-cards">
+            <div class="guide-card">
+              <div class="guide-step">1</div>
+              <div>
+                <div class="guide-card-title">新增清單</div>
+                <div class="guide-card-body">點右上角「＋ 新增清單」，選擇執照類型（建造執照／雜項執照／農業設施／變更設計）與綁定的案件名稱，系統會自動帶入該類型的標準文件清單。</div>
+              </div>
+            </div>
+            <div class="guide-card">
+              <div class="guide-step">2</div>
+              <div>
+                <div class="guide-card-title">確認文件狀態</div>
+                <div class="guide-card-body">每份文件右側有狀態按鈕，點擊循環切換三種狀態：<br>
+                  <span style="display:inline-flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+                    <span class="pst-btn pst-pending" style="font-size:11px;padding:2px 8px">? 待確認</span>
+                    <span class="pst-btn pst-have" style="font-size:11px;padding:2px 8px">✓ 有</span>
+                    <span class="pst-btn pst-none" style="font-size:11px;padding:2px 8px">✗ 無</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div class="guide-card">
+              <div class="guide-step">3</div>
+              <div>
+                <div class="guide-card-title">備註欄位</div>
+                <div class="guide-card-body">每份文件右側的備註欄可輸入自由文字，例如「待甲方補件」、「已收到但需確認版本」等。</div>
+              </div>
+            </div>
+            <div class="guide-card">
+              <div class="guide-step">4</div>
+              <div>
+                <div class="guide-card-title">執照類型說明</div>
+                <div class="guide-card-body" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px">
+                  <span class="permit-type-badge permit-type-build">建造執照</span>
+                  <span class="permit-type-badge permit-type-build">雜項執照</span>
+                  <span class="permit-type-badge permit-type-build">農業設施</span>
+                  <span class="permit-type-badge permit-type-change">變更設計</span>
+                </div>
+                <div class="guide-card-body" style="margin-top:6px">橘色為新建類型，綠色為變更設計類型。各類型預設文件清單依花蓮縣送審規定整理。</div>
+              </div>
+            </div>
+            <div class="guide-card">
+              <div class="guide-step">5</div>
+              <div>
+                <div class="guide-card-title">新增自訂文件</div>
+                <div class="guide-card-body">每個類別下方有「＋ 新增文件至此類別」，可加入標準清單以外的文件。</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 7. 新增進度 -->
         <div id="g-add" class="guide-section">
           <div class="guide-section-head"><span class="guide-icon">➕</span><div><div class="guide-title">新增工作項目</div><div class="guide-sub">建立新任務的步驟</div></div></div>
           <div class="guide-cards">
