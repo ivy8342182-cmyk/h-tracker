@@ -4092,7 +4092,7 @@ function permitTypeBadge(type){
 }
 
 function permitProgress(cl){
-  const items=cl.items||[];
+  const items=(cl.items||[]).filter(it=>it.req);
   if(!items.length) return{pct:0,have:0,total:0};
   const have=items.filter(it=>it.status==='have').length;
   return{pct:Math.round(have/items.length*100),have,total:items.length};
@@ -4160,10 +4160,13 @@ function renderPermit(){
           </span>
           <input class="permit-item-note" value="${(it.note||'').replace(/"/g,'&quot;')}" placeholder="備註"
             onchange="updatePermitItemNote('${cl.id}',${it._idx},this.value)">
-          <button class="pst-btn ${statusClass[it.status||'pending']}"
-            onclick="cyclePermitItemStatus('${cl.id}',${it._idx})">
-            ${statusLabel[it.status||'pending']}
-          </button>
+          ${it.req
+            ?`<button class="pst-btn ${statusClass[it.status||'pending']}"
+                onclick="cyclePermitItemStatus('${cl.id}',${it._idx})">
+                ${statusLabel[it.status||'pending']}
+              </button>`
+            :`<span style="font-size:11px;color:var(--text-hint);min-width:60px;text-align:right">（選附）</span>`
+          }
         </div>`).join('')}
       <div class="permit-add-item" onclick="openAddPermitItem('${cl.id}','${cat}')">＋ 新增文件至此類別</div>
     </div>`).join('');
