@@ -4160,13 +4160,11 @@ function renderPermit(){
           </span>
           <input class="permit-item-note" value="${(it.note||'').replace(/"/g,'&quot;')}" placeholder="備註"
             onchange="updatePermitItemNote('${cl.id}',${it._idx},this.value)">
-          ${it.req
-            ?`<button class="pst-btn ${statusClass[it.status||'pending']}"
-                onclick="cyclePermitItemStatus('${cl.id}',${it._idx})">
-                ${statusLabel[it.status||'pending']}
-              </button>`
-            :`<span style="font-size:11px;color:var(--text-hint);min-width:60px;text-align:right">（選附）</span>`
-          }
+          <button class="pst-btn ${statusClass[it.status||'pending']}"
+            onclick="cyclePermitItemStatus('${cl.id}',${it._idx})"
+            style="${it.req?'':'opacity:.7'}">
+            ${statusLabel[it.status||'pending']}
+          </button>
         </div>`).join('')}
       <div class="permit-add-item" onclick="openAddPermitItem('${cl.id}','${cat}')">＋ 新增文件至此類別</div>
     </div>`).join('');
