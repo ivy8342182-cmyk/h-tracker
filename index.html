@@ -854,18 +854,15 @@ textarea.fc{resize:vertical;min-height:68px;}
     <!-- ── 新增卷宗清單 Modal ── -->
     <div class="overlay" id="permit-modal-overlay" onclick="if(event.target===this)closePermitModal()">
       <div class="modal" style="max-width:420px">
-        <div class="modal-header">
-          <div class="modal-title">新增卷宗確認清單</div>
-          <button class="modal-close" onclick="closePermitModal()">✕</button>
-        </div>
-        <div style="padding:1.25rem;display:flex;flex-direction:column;gap:14px">
+        <div class="modal-title">新增卷宗確認清單</div>
+        <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:1.5rem">
           <div>
-            <label class="form-label">綁定專案</label>
-            <select id="permit-modal-proj" class="form-input"></select>
+            <label class="flabel">綁定專案</label>
+            <select id="permit-modal-proj" class="fc"></select>
           </div>
           <div>
-            <label class="form-label">執照類型</label>
-            <select id="permit-modal-type" class="form-input">
+            <label class="flabel">執照類型</label>
+            <select id="permit-modal-type" class="fc">
               <option value="建造執照">建造執照</option>
               <option value="雜項執照">雜項執照</option>
               <option value="農業設施">農業設施</option>
@@ -873,11 +870,11 @@ textarea.fc{resize:vertical;min-height:68px;}
             </select>
           </div>
           <div>
-            <label class="form-label">清單備註（選填，如：A棟、第一次送審）</label>
-            <input id="permit-modal-note" class="form-input" placeholder="可空白" maxlength="40">
+            <label class="flabel">清單備註（選填，如：A棟、第一次送審）</label>
+            <input id="permit-modal-note" class="fc" placeholder="可空白" maxlength="40">
           </div>
         </div>
-        <div class="modal-footer">
+        <div style="display:flex;justify-content:flex-end;gap:8px">
           <button class="btn" onclick="closePermitModal()">取消</button>
           <button class="btn btn-primary" onclick="createPermitChecklist()">建立清單</button>
         </div>
@@ -887,25 +884,22 @@ textarea.fc{resize:vertical;min-height:68px;}
     <!-- ── 新增自訂文件 Modal ── -->
     <div class="overlay" id="permit-additem-overlay" onclick="if(event.target===this)closeAddPermitItem()">
       <div class="modal" style="max-width:380px">
-        <div class="modal-header">
-          <div class="modal-title">新增自訂文件</div>
-          <button class="modal-close" onclick="closeAddPermitItem()">✕</button>
-        </div>
-        <div style="padding:1.25rem;display:flex;flex-direction:column;gap:14px">
+        <div class="modal-title">新增自訂文件</div>
+        <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:1.5rem">
           <div>
-            <label class="form-label">文件名稱</label>
-            <input id="pai-name" class="form-input" placeholder="輸入文件名稱" maxlength="60">
+            <label class="flabel">文件名稱</label>
+            <input id="pai-name" class="fc" placeholder="輸入文件名稱" maxlength="60">
           </div>
           <div>
-            <label class="form-label">類別（分組）</label>
-            <input id="pai-cat" class="form-input" placeholder="例：申請書類、設計圖說" maxlength="30">
+            <label class="flabel">類別（分組）</label>
+            <input id="pai-cat" class="fc" placeholder="例：申請書類、設計圖說" maxlength="30">
           </div>
           <div style="display:flex;align-items:center;gap:8px">
             <input type="checkbox" id="pai-req" style="width:14px;height:14px">
             <label for="pai-req" style="font-size:13px;cursor:pointer">必要文件</label>
           </div>
         </div>
-        <div class="modal-footer">
+        <div style="display:flex;justify-content:flex-end;gap:8px">
           <button class="btn" onclick="closeAddPermitItem()">取消</button>
           <button class="btn btn-primary" onclick="submitAddPermitItem()">新增</button>
         </div>
